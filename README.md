@@ -38,6 +38,21 @@ The registry ships with 9 seeded candidates (3 REJECTED, 1 CONDITIONAL_SURVIVOR,
 - **Add Candidate** creates a new record (stored in your browser), with JSON import for pasting existing records.
 - Comments are stored locally in your browser.
 
+## Sharing
+
+Built-in **share buttons** use your phone's native share sheet (messages, email, etc.), with a copy-to-clipboard fallback on desktop:
+
+- **↗ Share app** (top bar) — shares the app link so others can install it too.
+- **↗ Share summary** (dashboard) — shares the latest audit report as plain text.
+- **↗ Share** (candidate page) — shares a candidate's definition, verdict, and reason.
+- **↗ share note** (each comment) — shares an individual note.
+
+## Repository layout
+
+- `index.html` — the complete app (registry data, audit engine, UI).
+- `research/` — the source registry (`operator_candidates.json`), the Python reference audit engine (`audit_registry.py`), and the Manus v2 schema document.
+- `docs/` — the research notes backing each candidate's statuses: no-go proofs, obstruction theorems, and construction notes. These are the same documents linked from the candidate pages' evidence sections.
+
 ## Technical notes
 
 - Single-file app: `index.html` contains the registry data, the audit engine (a JavaScript port of the Python reference `audit_operator_registry.py`), and the UI. The engine's verdicts were verified to match the Python reference on all 9 seeded candidates.
