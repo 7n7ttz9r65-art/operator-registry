@@ -1,0 +1,589 @@
+{
+  "schema_version": 2,
+  "candidates": [
+    {
+      "id": "prime_quantum_graph",
+      "name": "Prime-weighted quantum graph",
+      "definition_source": "Finite graph with prime-associated lengths/weights",
+      "circularity_attestation": "Graph lengths/weights are fixed functions of primes only; no zero data, Wronskian, or spectral fitting enters the construction.",
+      "uses_zero_data": false,
+      "uses_target_wronskian": false,
+      "uses_spectral_fitting": false,
+      "trace_status": "numerical",
+      "trace_certification": "floating_point",
+      "conditional_on": [],
+      "positivity_status": "proved",
+      "positivity_certification": "analytic_proof",
+      "conditional_on_positivity": [],
+      "covariance_status": "not_tested",
+      "covariance_certification": "none",
+      "self_adjoint_status": "proved",
+      "self_adjoint_certification": "analytic_proof",
+      "compact_resolvent_status": "proved",
+      "compact_resolvent_certification": "analytic_proof",
+      "weyl_status": "failed",
+      "weyl_certification": "analytic_proof",
+      "determinant_status": "failed",
+      "determinant_certification": "analytic_proof",
+      "arithmetic_specificity": "generic",
+      "evidence_files": [],
+      "rejection_reasons": [
+        "GUE statistics matched by non-arithmetic controls",
+        "No exact xi determinant",
+        "No exact Weil trace"
+      ],
+      "open_requirements": [],
+      "migration_note": "v1 had no certification fields; positivity/self-adjoint/compact-resolvent are standard finite-quantum-graph facts and legitimately analytic_proof. trace_status stays numerical (v1 said 'numerical' already, consistent, no downgrade needed).",
+      "status_log": [
+        {
+          "timestamp": "unknown-pre-v2",
+          "field": "all",
+          "old": "n/a",
+          "new": "as recorded",
+          "reason": "Migrated from v1 registry recovered after source workspace loss; no finer-grained history available prior to this point.",
+          "evidence_ref": "recovered v1 audit report"
+        }
+      ],
+      "uses_post_hoc_target_definition": false
+    },
+    {
+      "id": "theta_one_sided_factor",
+      "name": "Theta-derived one-sided de Branges factor",
+      "definition_source": "E_-(z) = 2 * integral Phi(u) exp(-izu) du",
+      "circularity_attestation": "Phi(u) is the theta-kernel representation of Xi; construction does not reference zero ordinates or fit to spectral statistics.",
+      "uses_zero_data": false,
+      "uses_target_wronskian": false,
+      "uses_spectral_fitting": false,
+      "trace_status": "proved",
+      "trace_certification": "analytic_proof",
+      "conditional_on": [
+        "Hermite-Biehler inequality for E_-, which positivity_status has already refuted for the direct scalar bridge"
+      ],
+      "positivity_status": "failed",
+      "positivity_certification": "interval_arithmetic",
+      "conditional_on_positivity": [],
+      "covariance_status": "not_tested",
+      "covariance_certification": "none",
+      "self_adjoint_status": "conditional",
+      "self_adjoint_certification": "analytic_proof",
+      "compact_resolvent_status": "not_tested",
+      "compact_resolvent_certification": "none",
+      "weyl_status": "not_tested",
+      "weyl_certification": "none",
+      "determinant_status": "not_tested",
+      "determinant_certification": "none",
+      "arithmetic_specificity": "theta_arithmetic",
+      "evidence_files": [
+        {
+          "path": "xi_integral_representation_notes.md",
+          "type": "doc",
+          "certification": "analytic_proof",
+          "reproducible": false,
+          "command": null,
+          "recovered": true
+        },
+        {
+          "path": "theta_wronskian_arb_tight_certificate.json",
+          "type": "data",
+          "certification": "interval_arithmetic",
+          "reproducible": false,
+          "command": null,
+          "recovered": true,
+          "note": "Data recovered verbatim. Generating script certify_theta_wronskian_arb_tight.py also recovered but NOT independently re-run -- requires python-flint/Arb, uninstallable in this sandbox (no network). An mpmath floating-point cross-check (sanity_check_theta_wronskian_mpmath.py) reproduced W(20)=-5.33510553...e-6 exactly matching the previously-quoted value, and confirmed it falls inside this certified interval -- corroborating but not equivalent to re-running the actual interval-arithmetic proof."
+        },
+        {
+          "path": "certify_theta_wronskian_arb_tight.py",
+          "type": "script",
+          "certification": "interval_arithmetic",
+          "reproducible": false,
+          "command": "python3 certify_theta_wronskian_arb_tight.py",
+          "recovered": true,
+          "note": "Source recovered verbatim. NOT reproducible in this sandbox: requires python-flint (Arb bindings), not installable here (no network). Genuinely different situation from test_matrix_valued_weil_kernel.py and run_exact_bilinear_weil_gaussian.py, which WERE independently re-run and matched bit-for-bit -- this one's reproducible:false reflects an environment limitation, not a missing file."
+        },
+        {
+          "path": "sanity_check_theta_wronskian_mpmath.py",
+          "type": "script",
+          "certification": "floating_point",
+          "reproducible": true,
+          "command": "python3 sanity_check_theta_wronskian_mpmath.py",
+          "note": "New: independent floating-point (non-certified) cross-check written this session since the real Arb script couldn't be run. Matches the interval and the previously-quoted W_5(20) value exactly. Does not upgrade the certification level of the Wronskian result -- floating-point agreement is supporting evidence, not proof."
+        },
+        {
+          "path": "proof_scalar_theta_weil_bridge_nogo.md",
+          "type": "doc",
+          "certification": "interval_arithmetic",
+          "reproducible": false,
+          "command": null,
+          "recovered": true
+        },
+        {
+          "path": "correlation_kernel_weil_theorem.md",
+          "type": "doc",
+          "certification": "analytic_proof",
+          "reproducible": false,
+          "command": null,
+          "recovered": true,
+          "note": "Filename correspondence to the original file manifest uncertain (see file's own header) -- content is what matters and is transcribed faithfully. Formally addresses this candidate's own open_requirement on non-direct matrix constructions: possible in principle, no non-tautological example exists yet."
+        }
+      ],
+      "rejection_reasons": [
+        "Certified negative Wronskian (interval-arithmetic enclosure, not floating point) rules out direct scalar positive-unitary correlation",
+        "Hermite-Biehler inequality not established"
+      ],
+      "open_requirements": [
+        "Formalize u>8 tail in executable certificate",
+        "Determine whether any non-direct matrix construction applies -- FORMALLY ANSWERED (not resolved) in correlation_kernel_weil_theorem.md: logically possible via operator-valued positive-definiteness, but the only concrete realization found (signed-measure L^2(|W|) construction) is tautological and gives continuous spectrum, not the Riemann discrete spectrum. No non-tautological construction has been produced. Still open, but no longer an unexamined question."
+      ],
+      "migration_note": "CORRECTED (previous version of this note stated an interval of [-5.459e-6,-5.211e-6] over x in [19.99,20.01] -- that was not sourced from any recovered document and was wrong; struck out here rather than left in place). The recovered source document gives the actual certified value: five theta summands, 180-bit Arb precision, 200,000 subdivisions, at x=20 exactly: W(20) in [-8.25011781628766e-6, -2.42009354494050e-6]. An earlier lower-precision computation (five summands, 60/80/100-digit independent runs agreeing to 50+ decimal places) gave the point estimate W_5(20)=-5.3351055362492714179767878666e-6, which sits inside the later Arb interval, consistent. positivity_certification: interval_arithmetic is accurate. The recovered document explicitly flags the u>8 tail bound as not yet inserted into the executable certificate -- retained verbatim in open_requirements, still open.",
+      "status_log": [
+        {
+          "timestamp": "unknown-pre-v2",
+          "field": "positivity_status",
+          "old": "floating_point sign only (~-5.335e-6)",
+          "new": "interval_arithmetic enclosure, entirely negative on [19.99,20.01]",
+          "reason": "Upgraded via 2nd/3rd-order Taylor-form rigorous quadrature with AD/jet interval arithmetic in prior session.",
+          "evidence_ref": "theta_wronskian_arb_tight_certificate.json"
+        }
+      ],
+      "uses_post_hoc_target_definition": false
+    },
+    {
+      "id": "weil_gaussian_convolution",
+      "name": "Exact convolution-bilinear Weil Gaussian form",
+      "definition_source": "Q_W(f,g) = W(f * g~) on Gaussian translates",
+      "circularity_attestation": "Defined purely from the Guinand-Weil explicit formula applied to Gaussian test functions; no zero ordinates or fitted parameters used.",
+      "uses_zero_data": false,
+      "uses_target_wronskian": false,
+      "uses_spectral_fitting": false,
+      "trace_status": "proved",
+      "trace_certification": "analytic_proof",
+      "conditional_on": [
+        "Positivity of the exact Weil form, currently numerical_negative not certified"
+      ],
+      "positivity_status": "numerical_negative",
+      "positivity_certification": "floating_point",
+      "conditional_on_positivity": [],
+      "covariance_status": "proved",
+      "covariance_certification": "analytic_proof",
+      "self_adjoint_status": "conditional",
+      "self_adjoint_certification": "analytic_proof",
+      "compact_resolvent_status": "not_tested",
+      "compact_resolvent_certification": "none",
+      "weyl_status": "not_tested",
+      "weyl_certification": "none",
+      "determinant_status": "not_tested",
+      "determinant_certification": "none",
+      "arithmetic_specificity": "prime_specific",
+      "evidence_files": [
+        {
+          "path": "exact_bilinear_weil_form.md",
+          "type": "doc",
+          "certification": "analytic_proof",
+          "reproducible": false,
+          "command": null,
+          "recovered": true
+        },
+        {
+          "path": "exact_bilinear_weil_gaussian_results.json",
+          "type": "data",
+          "certification": "floating_point",
+          "reproducible": true,
+          "command": "python3 run_exact_bilinear_weil_gaussian.py"
+        },
+        {
+          "path": "verify_weil_terms.py",
+          "type": "script",
+          "certification": "floating_point",
+          "reproducible": true,
+          "command": "python3 verify_weil_terms.py",
+          "recovered": true,
+          "note": "Independent term-by-term cross-check (separate pole/prime/gamma matrices, M=12), recovered and re-run: output matched documented values exactly (pole trace=61.30183387988408, prime trace=-24.030467369945022, gamma trace=-10.376832091769275). This is a DIFFERENT decomposition than the M=12/24/36/48 sweep above -- confirms the corrected pole/prime/gamma implementation independently, doesn't duplicate it."
+        },
+        {
+          "path": "bilinear_weil_cutoff_results.json",
+          "type": "data",
+          "certification": "floating_point",
+          "reproducible": false,
+          "command": null,
+          "note": "STILL NOT RECOVERED. Now known (from a later file manifest) to be generated by test_bilinear_weil_cutoff_convergence.py, which was also not recovered. The 5k/100k/1M prime-power cutoff-stability claim (identical min_eigenvalue -3.3268211010 and negative_count 4 at all three cutoffs, per that manifest's own table) is stated in prose/table but the generating script's content is still missing. Genuinely missing, not just unverified -- flag stays."
+        },
+        {
+          "path": "theta_hermite_weil_results.json",
+          "type": "data",
+          "certification": "floating_point",
+          "reproducible": true,
+          "command": "python3 run_theta_hermite_weil_experiment.py",
+          "recovered": true,
+          "note": "NEW evidence, found in Darryl's notes export, not previously in this registry. A preregistered experiment (parameters fixed before inspecting eigenvalues) testing TWO additional test-function families -- theta-kernel translates and Hermite functions n=0..6, 7 fixed translations each, dimension 49 -- under the same exact bilinear Weil form. Script reconstructed by hand (indentation was stripped by the notes export) and independently re-run: matched documented output to every digit. Both families stably indefinite across all three prime cutoffs (theta: min_eigenvalue -4.304028597712... identical to 12 digits at 5k/100k/1M, 26/49 negative; Hermite: min_eigenvalue -34.46/-53.20/-53.24, 25-30/49 negative). This broadens the indefiniteness evidence beyond Gaussians specifically to two structurally different families, still floating-point only."
+        },
+        {
+          "path": "trace_preserving_positivity_obstruction.md",
+          "type": "doc",
+          "certification": "analytic_proof",
+          "reproducible": false,
+          "command": null,
+          "recovered": true,
+          "note": "NEW theorem, found in Darryl's notes export, not previously logged anywhere. Proves that IF the exact Weil form is indefinite anywhere (once certified, not just numerically), THEN no positive projection, shift, or replacement agreeing with it on the full test space can preserve the exact prime/gamma trace. This directly answers this candidate's own open_requirement below -- see the updated text."
+        }
+      ],
+      "rejection_reasons": [
+        "Floating-point (mpmath) negative eigenvalues on the sigma=0.42, dim-12 test matrix, stable across prime cutoffs 5k/100k/1M -- NOT interval-certified"
+      ],
+      "open_requirements": [
+        "Find a principled positive arithmetic modification without changing exact trace -- SHARPENED (not resolved) by trace_preserving_positivity_obstruction.md: this is proved IMPOSSIBLE outright, not merely open, once indefiniteness is certified on even one admissible test function (no positive projection/shift/replacement can preserve the exact trace). The real remaining task is therefore the interval-arithmetic certification below, not a search for a fix -- if that certification succeeds, this requirement should be struck, not left open, and the candidate should move toward a certified failed/indefinite rejection.",
+        "Re-run under interval arithmetic before this can legitimately be called 'indefinite' rather than 'numerical_negative' -- now the load-bearing remaining step, evidence across THREE test-function families (Gaussian, theta-kernel translates, Hermite) all stably negative across three orders of magnitude of prime cutoff",
+        "Evaluate whether a rank-trace/signature decomposition (see literature/2026-alpoge-furman-claude-two-thirds.md) can extract a weaker unconditional statement from this matrix even without full positivity -- open question, not yet attempted, see note for what would need to transfer"
+      ],
+      "migration_note": "REAL FIX, NOT COSMETIC: v1 recorded positivity_status as 'indefinite', which under the v2 schema requires interval_arithmetic or analytic_proof certification. The underlying evidence was floating-point (numpy eigvalsh) -- that is floating_point certification. Under v2 rules this is downgraded to numerical_negative, and rejection rule 2 (which only fires on indefinite) does NOT automatically apply to this candidate anymore. UPDATE: exact_bilinear_weil_form.md and the generating script for exact_bilinear_weil_gaussian_results.json have both been RECOVERED and independently re-run in this session, matching documented values to every reported digit across M=12,24,36,48 (min_eigenvalue -3.327/-3.734/-3.887/-29.605, negative_count 4/8/12/16). Notably the 'prime' construction stays much closer to well-behaved than its non-arithmetic 'control' comparison at every M (e.g. M=36: prime min_eigenvalue -3.89 vs control -179.90) -- consistently negative, never positive, but visibly less pathological than the control, which may be worth a closer look later. bilinear_weil_cutoff_results.json (the 5k/100k/1M prime-cutoff-stability claim from section 10 of the recovered document) is still genuinely missing -- not included in what was recovered, flagged honestly rather than assumed. IMPORTANT CAVEAT (unchanged from before): a separate, later, dps=70 exact bilinear Weil form computation on Gaussian translates at sigma=0.10, delta=0.30 found ZERO negative eigenvalues through N=28 and retracted earlier N=16-28 negative findings as insufficient numerical margin -- that was a DIFFERENT (sigma, delta) configuration than the sigma=0.42 result here. Not a contradiction, just a reminder these are different tested families.",
+      "status_log": [
+        {
+          "timestamp": "unknown-pre-v2",
+          "field": "positivity_status",
+          "old": "indefinite (v1 label)",
+          "new": "numerical_negative",
+          "reason": "v1 'indefinite' was backed only by mpmath floating-point eigenvalues, not an interval-arithmetic or analytic certificate. v2 schema reserves 'indefinite' for certified mixed-sign results. Relabeled to reflect actual evidence strength; this is a downgrade in confidence, not a new finding.",
+          "evidence_ref": "exact_bilinear_weil_gaussian_results.json (floating point, sigma=0.42, dim 12)"
+        }
+      ],
+      "uses_post_hoc_target_definition": false
+    },
+    {
+      "id": "prime_positive_reservoir",
+      "name": "Positive prime-power trace reservoir",
+      "definition_source": "Diagonal A e_p^k = k log(p) e_p^k with positive von Mangoldt weights",
+      "circularity_attestation": "Diagonal operator defined directly from prime powers and von Mangoldt weights; no zero or Wronskian dependence.",
+      "uses_zero_data": false,
+      "uses_target_wronskian": false,
+      "uses_spectral_fitting": false,
+      "trace_status": "proved",
+      "trace_certification": "analytic_proof",
+      "conditional_on": [],
+      "positivity_status": "proved",
+      "positivity_certification": "analytic_proof",
+      "conditional_on_positivity": [],
+      "covariance_status": "not_tested",
+      "covariance_certification": "none",
+      "self_adjoint_status": "proved",
+      "self_adjoint_certification": "analytic_proof",
+      "compact_resolvent_status": "proved",
+      "compact_resolvent_certification": "analytic_proof",
+      "weyl_status": "failed",
+      "weyl_certification": "analytic_proof",
+      "determinant_status": "failed",
+      "determinant_certification": "analytic_proof",
+      "arithmetic_specificity": "prime_specific",
+      "evidence_files": [
+        {
+          "path": "positive_prime_trace_results.json",
+          "type": "data",
+          "certification": "analytic_proof",
+          "reproducible": false,
+          "command": null,
+          "note": "STILL NOT RECOVERED. Only filename references found in the notes export, not the actual data/script content."
+        },
+        {
+          "path": "same_operator_trace_support_obstruction.md",
+          "type": "doc",
+          "certification": "analytic_proof",
+          "reproducible": false,
+          "command": null,
+          "recovered": true,
+          "note": "Found in full within a saved Manus chat transcript in Darryl's Notes export. Also directly informs conditional_weil_gns's correlation-kernel architecture and twin_dirac_susy_factorization's two-operator design -- see the file's own closing section."
+        }
+      ],
+      "rejection_reasons": [
+        "Logarithmic prime-power spectrum has wrong counting law",
+        "Does not produce Xi determinant"
+      ],
+      "open_requirements": [
+        "Canonical relation to a Hamiltonian with Riemann Weyl law"
+      ],
+      "migration_note": "No certification downgrade needed; diagonal spectrum, self-adjointness, positivity, and compact resolvent are elementary analytic facts about this explicit diagonal operator, correctly analytic_proof.",
+      "status_log": [
+        {
+          "timestamp": "unknown-pre-v2",
+          "field": "all",
+          "old": "n/a",
+          "new": "as recorded",
+          "reason": "Migrated from v1 registry.",
+          "evidence_ref": "recovered v1 audit report"
+        }
+      ],
+      "uses_post_hoc_target_definition": false
+    },
+    {
+      "id": "conditional_weil_gns",
+      "name": "Conditional Weil/GNS translation generator",
+      "definition_source": "Positive Weil form followed by translation-invariant GNS completion",
+      "circularity_attestation": "Construction is conditional on positivity of the exact Weil form (itself zero-independent); no zero data used in the construction step.",
+      "uses_zero_data": false,
+      "uses_target_wronskian": false,
+      "uses_spectral_fitting": false,
+      "trace_status": "conditional",
+      "trace_certification": "analytic_proof",
+      "conditional_on": [
+        "Full unconditional positivity of the exact Weil form (RH-equivalent in strength)"
+      ],
+      "positivity_status": "conditional",
+      "positivity_certification": "analytic_proof",
+      "conditional_on_positivity": [
+        "Full unconditional positivity of the exact Weil form (RH-equivalent in strength)"
+      ],
+      "covariance_status": "proved",
+      "covariance_certification": "analytic_proof",
+      "self_adjoint_status": "conditional",
+      "self_adjoint_certification": "analytic_proof",
+      "compact_resolvent_status": "conditional",
+      "compact_resolvent_certification": "analytic_proof",
+      "weyl_status": "conditional",
+      "weyl_certification": "analytic_proof",
+      "determinant_status": "conditional",
+      "determinant_certification": "analytic_proof",
+      "arithmetic_specificity": "prime_specific",
+      "evidence_files": [
+        {
+          "path": "conditional_weil_gns_theorem.md",
+          "type": "doc",
+          "certification": "analytic_proof",
+          "reproducible": false,
+          "command": null,
+          "note": "STILL NOT RECOVERED. This is a distinct file from conditional_weil_translation_operator.md (below) -- do not conflate; recovering one did not recover the other."
+        },
+        {
+          "path": "conditional_weil_translation_operator.md",
+          "type": "doc",
+          "certification": "analytic_proof",
+          "reproducible": false,
+          "command": null,
+          "recovered": true
+        }
+      ],
+      "rejection_reasons": [],
+      "open_requirements": [
+        "Unconditional positivity",
+        "Independent compactness and determinant theorems"
+      ],
+      "migration_note": "All 'conditional' fields now carry explicit conditional_on statements per v2 rule 3 -- v1 had the dependency stated only in prose in the audit report, not machine-checkable per field.",
+      "status_log": [
+        {
+          "timestamp": "unknown-pre-v2",
+          "field": "all",
+          "old": "n/a",
+          "new": "as recorded",
+          "reason": "Migrated from v1 registry; sole conditional survivor, status unchanged.",
+          "evidence_ref": "recovered v1 audit report"
+        }
+      ],
+      "uses_post_hoc_target_definition": false
+    },
+    {
+      "id": "raw_matrix_weil_gaussians",
+      "name": "Raw matrix-valued Gaussian Weil kernel",
+      "definition_source": "K_ij(d) = Q_W(tau_d f_i, f_j) for Gaussian vectors",
+      "circularity_attestation": "Matrix built from translation-covariant Gaussian vectors and the exact Weil form; no zero ordinates or fitted parameters.",
+      "uses_zero_data": false,
+      "uses_target_wronskian": false,
+      "uses_spectral_fitting": false,
+      "trace_status": "proved",
+      "trace_certification": "analytic_proof",
+      "conditional_on": [
+        "Positivity of the raw translation-block kernel, currently numerical_negative not certified"
+      ],
+      "positivity_status": "numerical_negative",
+      "positivity_certification": "floating_point",
+      "conditional_on_positivity": [],
+      "covariance_status": "proved",
+      "covariance_certification": "analytic_proof",
+      "self_adjoint_status": "conditional",
+      "self_adjoint_certification": "analytic_proof",
+      "compact_resolvent_status": "not_tested",
+      "compact_resolvent_certification": "none",
+      "weyl_status": "not_tested",
+      "weyl_certification": "none",
+      "determinant_status": "not_tested",
+      "determinant_certification": "none",
+      "arithmetic_specificity": "prime_specific",
+      "evidence_files": [
+        {
+          "path": "matrix_valued_weil_results.json",
+          "type": "data",
+          "certification": "floating_point",
+          "reproducible": false,
+          "command": null
+        },
+        {
+          "path": "test_matrix_valued_weil_kernel.py",
+          "type": "script",
+          "certification": "floating_point",
+          "reproducible": true,
+          "command": "python3 test_matrix_valued_weil_kernel.py"
+        }
+      ],
+      "rejection_reasons": [
+        "21-by-21 translation block has five negative eigenvalues (floating point, not interval-certified)"
+      ],
+      "open_requirements": [
+        "Different canonical arithmetic vectors or positive representation",
+        "Re-run under interval arithmetic before calling this 'indefinite' rather than 'numerical_negative'",
+        "Evaluate whether a rank-trace/signature decomposition (see literature/2026-alpoge-furman-claude-two-thirds.md) can extract a weaker unconditional statement from this matrix even without full positivity -- open question, not yet attempted, see note for what would need to transfer"
+      ],
+      "migration_note": "REAL FIX, same pattern as weil_gaussian_convolution: v1 called this 'indefinite' on a floating-point (numpy eigenvalue) basis. Downgraded to numerical_negative under v2. test_matrix_valued_weil_kernel.py has since been RECOVERED verbatim from Darryl's source document and independently re-run in this session: output matched the documented values to every reported digit (K0_min=1.9326199268771522, block_min=-4.470728478553433, block_negative_count=5, block_max=16.892741453781674). This is now a genuinely reproducible floating-point result, not just a citation -- still floating_point certification (numpy eigvalsh, not interval arithmetic), so it still cannot license 'indefinite' under v2 rule 2, but the evidence itself is now solid.",
+      "status_log": [
+        {
+          "timestamp": "unknown-pre-v2",
+          "field": "positivity_status",
+          "old": "indefinite (v1 label)",
+          "new": "numerical_negative",
+          "reason": "Same certification-level fix as weil_gaussian_convolution: v1 'indefinite' was backed only by floating-point eigenvalues.",
+          "evidence_ref": "matrix_valued_weil_results.json (floating point, 21x21 block)"
+        }
+      ],
+      "uses_post_hoc_target_definition": false
+    },
+    {
+      "id": "prime_gap_jacobi_operator",
+      "name": "Prime-gap coupled Jacobi operator",
+      "definition_source": "Tridiagonal-like real symmetric operator on ell^2(primes): A_pp = log p, A_pp' = sqrt(Lambda(p)Lambda(p'))/(p'-p) for consecutive primes p<p', 0 otherwise.",
+      "circularity_attestation": "Entries are fixed functions of prime values and gaps only; no zero ordinate, Wronskian sign, or spectral-fit parameter enters the construction.",
+      "uses_zero_data": false,
+      "uses_target_wronskian": false,
+      "uses_spectral_fitting": false,
+      "trace_status": "not_tested",
+      "trace_certification": "none",
+      "conditional_on": [],
+      "positivity_status": "not_tested",
+      "positivity_certification": "none",
+      "conditional_on_positivity": [],
+      "covariance_status": "not_tested",
+      "covariance_certification": "none",
+      "self_adjoint_status": "not_tested",
+      "self_adjoint_certification": "none",
+      "compact_resolvent_status": "not_tested",
+      "compact_resolvent_certification": "none",
+      "weyl_status": "not_tested",
+      "weyl_certification": "none",
+      "determinant_status": "not_tested",
+      "determinant_certification": "none",
+      "arithmetic_specificity": "prime_specific",
+      "evidence_files": [],
+      "rejection_reasons": [],
+      "open_requirements": [
+        "Check essential self-adjointness (growth/Carleman condition, not just real-symmetry)",
+        "Compute eigenvalue-counting asymptotics and compare to Riemann Weyl law -- this is the actual open question the construction targets, not yet attempted",
+        "The p'-p coupling weight was chosen as a plausible non-diagonal modification, not derived from a specific argument for why it should reproduce the correct counting law -- weakest-motivated of the three proposed in this batch, deprioritized accordingly"
+      ],
+      "migration_note": "Proposed by Claude at Darryl's request for a batch of candidate generations (session note: Claude flagged this as the weakest-motivated of the three, worth logging but not prioritizing).",
+      "status_log": [
+        {
+          "timestamp": "2026-09-04",
+          "field": "all",
+          "old": "n/a",
+          "new": "proposed, not_tested",
+          "reason": "Added via requested candidate-generation batch; targets prime_positive_reservoir's wrong-counting-law rejection.",
+          "evidence_ref": "conversation record"
+        }
+      ],
+      "uses_post_hoc_target_definition": false
+    },
+    {
+      "id": "twin_dirac_susy_factorization",
+      "name": "Twin Dirac/SUSY factorization operator (D, D*)",
+      "definition_source": "D: ell^2(prime powers) -> Gaussian-translate Hilbert space, D e_n := sqrt(Lambda(n)) * h_{log n} (h_ab the Gaussian-convolution window from the finite Weil-matrix certificate work). D*D and DD* isospectral away from kernel by standard SUSY-QM factorization.",
+      "circularity_attestation": "D is built directly from von Mangoldt weights and prime-power logarithms only; no zero ordinate or fitted parameter enters.",
+      "uses_zero_data": false,
+      "uses_target_wronskian": false,
+      "uses_spectral_fitting": false,
+      "trace_status": "not_tested",
+      "trace_certification": "none",
+      "conditional_on": [],
+      "positivity_status": "not_tested",
+      "positivity_certification": "none",
+      "conditional_on_positivity": [],
+      "covariance_status": "not_tested",
+      "covariance_certification": "none",
+      "self_adjoint_status": "not_tested",
+      "self_adjoint_certification": "none",
+      "compact_resolvent_status": "not_tested",
+      "compact_resolvent_certification": "none",
+      "weyl_status": "not_tested",
+      "weyl_certification": "none",
+      "determinant_status": "not_tested",
+      "determinant_certification": "none",
+      "arithmetic_specificity": "prime_specific",
+      "evidence_files": [],
+      "rejection_reasons": [],
+      "open_requirements": [
+        "Check boundedness of D (unchecked)",
+        "Compute Weyl asymptotics of DD* on the Gaussian-translate side -- the factorization relocates the hard problem from the prime side to this side, it does not obviously solve it",
+        "This is the structurally most promising of the three proposed in this batch (separates the arithmetic-trace-carrying operator from the correct-spectrum-carrying operator, addressing the same-operator obstruction that killed prime_positive_reservoir), but confidence is in the shape of the idea, not yet in any result",
+        "Cross-reference: correlation_kernel_weil_theorem.md's tautology warning applies directly here -- D is built from prime powers/von Mangoldt weights before any target quantity is referenced, which is the correct order, but that ordering is the entire thing standing between this candidate and the same tautology trap that sank the signed-measure route on theta_one_sided_factor. Keep it that way as the construction develops."
+      ],
+      "migration_note": "Proposed by Claude at Darryl's request for a batch of candidate generations, directly following up on the twin-operator direction Darryl flagged as his next planned attempt.",
+      "status_log": [
+        {
+          "timestamp": "2026-09-04",
+          "field": "all",
+          "old": "n/a",
+          "new": "proposed, not_tested",
+          "reason": "Added via requested candidate-generation batch; targets the same-operator trace/spectrum obstruction noted on prime_positive_reservoir.",
+          "evidence_ref": "conversation record"
+        }
+      ],
+      "uses_post_hoc_target_definition": false
+    },
+    {
+      "id": "paired_theta_hermite_biehler",
+      "name": "Paired theta Hermite-Biehler construction (E, E*)",
+      "definition_source": "Genuine de Branges pair E = A - iB, E* = A + iB built from the same theta/xi integral-representation data as theta_one_sided_factor, tested via |E(z)| > |E*(z)| on the upper half-plane (the actual Hermite-Biehler criterion) rather than the single scalar Wronskian sign check that already failed.",
+      "circularity_attestation": "Construction uses only the theta-kernel representation of Xi; no zero ordinate or fitted parameter enters.",
+      "uses_zero_data": false,
+      "uses_target_wronskian": false,
+      "uses_spectral_fitting": false,
+      "trace_status": "not_tested",
+      "trace_certification": "none",
+      "conditional_on": [],
+      "positivity_status": "not_tested",
+      "positivity_certification": "none",
+      "conditional_on_positivity": [],
+      "covariance_status": "not_tested",
+      "covariance_certification": "none",
+      "self_adjoint_status": "not_tested",
+      "self_adjoint_certification": "none",
+      "compact_resolvent_status": "not_tested",
+      "compact_resolvent_certification": "none",
+      "weyl_status": "not_tested",
+      "weyl_certification": "none",
+      "determinant_status": "not_tested",
+      "determinant_certification": "none",
+      "arithmetic_specificity": "theta_arithmetic",
+      "evidence_files": [
+        {
+          "path": "xi_integral_representation_notes.md",
+          "type": "doc",
+          "certification": "analytic_proof",
+          "reproducible": false,
+          "command": null,
+          "recovered": true
+        }
+      ],
+      "rejection_reasons": [],
+      "open_requirements": [
+        "UNBLOCKED: exact theta kernel Phi(u) = Sum (4pi^2 n^4 e^{9u/2} - 6pi n^2 e^{5u/2}) e^{-pi n^2 e^{2u}} now recovered in xi_integral_representation_notes.md. Natural E* candidate is E_-^#(z) = E_-(-z); the actual test is |E_-^#(z)| < |E_-(z)| for Im(z)>0, which is a DIFFERENT statement from the real-line Wronskian sign already certified negative for theta_one_sided_factor -- not yet known whether it inherits the same failure.",
+        "First concrete step: evaluate both sides on a grid near z=20+iy, y>0 small, using the same 5-term-plus-tail truncation and Arb precision validated on the Wronskian. Not yet attempted.",
+        "Cheapest of the three batch candidates to falsify once set up -- still the first one to actually test"
+      ],
+      "migration_note": "Proposed by Claude at Darryl's request for a batch of candidate generations, directly answering theta_one_sided_factor's own open_requirements. UNBLOCKED as of this session: Darryl recovered the original source document containing the exact Phi(u) formula, superseding the earlier guessed (and wrong) coefficients. Ready to attempt.",
+      "status_log": [
+        {
+          "timestamp": "2026-09-04",
+          "field": "all",
+          "old": "n/a",
+          "new": "proposed, not_tested, blocked on missing source file",
+          "reason": "Added via requested candidate-generation batch; targets theta_one_sided_factor's own open_requirements.",
+          "evidence_ref": "conversation record"
+        }
+      ],
+      "uses_post_hoc_target_definition": false
+    }
+  ]
+}
