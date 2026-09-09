@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1e3a5f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Operator Registry">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Operator Registry — Hilbert-Pólya Falsification System</title>
+<style>
+:root{--bg:#faf9f6;--card:#ffffff;--ink:#1a1a1a;--muted:#6b6b6b;--border:#e5e2da;--accent:#1e3a5f;--red:#b91c1c;--amber:#b45309;--gray:#57534e;--green:#15803d;--purple:#7e22ce;--redbg:#fef2f2;--amberbg:#fffbeb;--graybg:#f5f5f4;--greenbg:#f0fdf4;--purplebg:#faf5ff}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Georgia,'Times New Roman',serif;background:var(--bg);color:var(--ink);line-height:1.6}
+button{font-family:inherit;cursor:pointer}
+.top{position:sticky;top:0;z-index:50;background:var(--accent);color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.top h1{font-size:18px;font-weight:600;letter-spacing:.3px}
+.top .btn-help{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:4px 12px;font-size:14px}
+nav.tabs{background:var(--card);border-bottom:1px solid var(--border);display:flex;overflow-x:auto}
+nav.tabs button{flex:1;min-width:90px;background:none;border:none;border-bottom:3px solid transparent;padding:12px 8px;font-size:14px;color:var(--muted);white-space:nowrap}
+nav.tabs button.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
+.wrap{max-width:900px;margin:0 auto;padding:16px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px}
+.tile{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
+.tile .n{font-size:26px;font-weight:700}
+.tile .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px}
+.card h2{font-size:17px;margin-bottom:10px;color:var(--accent)}
+.card h3{font-size:15px;margin:14px 0 8px;color:var(--accent)}
+.row-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:14px}
+.btn.sec{background:var(--card);color:var(--accent);border:1px solid var(--accent)}
+.btn.danger{background:var(--red)}
+.btn:active{opacity:.8}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:8px 6px;border-bottom:2px solid var(--border)}
+td{padding:8px 6px;border-bottom:1px solid var(--border);vertical-align:top}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-family:Helvetica,Arial,sans-serif;font-weight:600;white-space:nowrap}
+.b-REJECTED{background:var(--redbg);color:var(--red)}
+.b-CONDITIONAL_SURVIVOR{background:var(--amberbg);color:var(--amber)}
+.b-UNCERTIFIED_INDETERMINATE{background:var(--graybg);color:var(--gray)}
+.b-UNCONDITIONAL_SURVIVOR{background:var(--greenbg);color:var(--green)}
+.b-SCHEMA_VIOLATION{background:var(--purplebg);color:var(--purple)}
+.b-cert{background:var(--graybg);color:var(--gray);font-weight:400}
+.cand{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;cursor:pointer}
+.cand:hover{border-color:var(--accent)}
+.cand .name{font-weight:700;font-size:16px;margin-bottom:4px}
+.cand .meta{font-size:13px;color:var(--muted)}
+.back{background:none;border:none;color:var(--accent);font-size:14px;margin-bottom:12px;padding:0;text-decoration:underline}
+.kv{font-size:14px;margin:4px 0}
+.kv b{color:var(--muted);font-weight:400;font-style:italic}
+.log-entry{border-left:3px solid var(--border);padding:6px 12px;margin:8px 0;font-size:13px}
+.log-entry .t{color:var(--muted);font-size:12px}
+.ev{font-size:13px;margin:6px 0;padding:8px;background:var(--bg);border-radius:6px}
+.ev a{color:var(--accent);word-break:break-all}
+.miss{color:var(--red);font-weight:700;font-size:11px}
+textarea,input[type=text],select{width:100%;font-family:inherit;font-size:14px;padding:8px;border:1px solid var(--border);border-radius:6px;background:#fff;margin:4px 0 10px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}.top h1{font-size:15px}}
+label{font-size:13px;color:var(--muted)}
+.comment{border:1px solid var(--border);border-radius:8px;padding:10px;margin:8px 0;font-size:14px}
+.comment .who{font-weight:700;font-size:13px}
+.comment .when{color:var(--muted);font-size:12px}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal{background:var(--card);border-radius:12px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto;padding:24px}
+.modal h2{color:var(--accent);margin-bottom:12px;font-size:20px}
+.modal p{font-size:14px;margin:10px 0}
+.modal .step{background:var(--bg);border-radius:8px;padding:12px;margin:10px 0}
+.modal .step b{color:var(--accent)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 20px;border-radius:8px;font-size:14px;z-index:200;opacity:.95}
+.runhist{font-size:13px;color:var(--muted)}
+.hidden{display:none}
+.reasons li{margin-left:18px;font-size:13px}
+.helpdt{font-size:13px;margin:8px 0}
+.helpdt b{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>Operator Registry</h1>
+  <button class="btn-help" onclick="openTutorial()">? Tutorial</button>
+</div>
+<nav class="tabs">
+  <button id="tab-dash" class="active" onclick="showTab('dash')">Dashboard</button>
+  <button id="tab-cand" onclick="showTab('cand')">Candidates</button>
+  <button id="tab-add" onclick="showTab('add')">Add Candidate</button>
+  <button id="tab-runs" onclick="showTab('runs')">Runs &amp; Saved</button>
+</nav>
+<div class="wrap">
+
+<!-- DASHBOARD -->
+<div id="view-dash">
+  <div class="tiles" id="tiles"></div>
+  <div class="row-actions">
+    <button class="btn" onclick="runAudit()">▶ Run Audit</button>
+    <button class="btn sec" onclick="downloadRegistry()">⬇ Download registry (JSON)</button>
+    <button class="btn sec" onclick="copySummary()">⧉ Copy summary</button>
+  </div>
+  <div class="card">
+    <h2 id="dash-title">Audit results</h2>
+    <div style="overflow-x:auto"><table id="results-table"><thead><tr><th>Candidate</th><th>Verdict</th><th>Reason</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</div>
+
+<!-- CANDIDATES -->
+<div id="view-cand" class="hidden">
+  <div class="card">
+    <h2>Candidates</h2>
+    <select id="filter-verdict" onchange="renderCandidates()" style="max-width:280px">
+      <option value="">All verdicts</option>
+      <option>REJECTED</option><option>CONDITIONAL_SURVIVOR</option>
+      <option>UNCERTIFIED_INDETERMINATE</option><option>UNCONDITIONAL_SURVIVOR</option><option>SCHEMA_VIOLATION</option><option>— not yet audited</option>
+    </select>
+    <div id="cand-list"></div>
+  </div>
+</div>
+
+<!-- CANDIDATE DETAIL -->
+<div id="view-detail" class="hidden"></div>
+
+<!-- ADD CANDIDATE -->
+<div id="view-add" class="hidden">
+  <div class="card">
+    <h2>Add a candidate</h2>
+    <p style="font-size:13px;color:var(--muted)">New candidates are stored in this browser (localStorage) and included in the next audit run.</p>
+    <h3>Import from JSON</h3>
+    <textarea id="paste-json" rows="6" placeholder='Paste a candidate record as JSON here...'></textarea>
+    <button class="btn sec" onclick="importJSON()">Import JSON into form</button>
+    <h3>Fields</h3>
+    <label>candidate_key (short unique id)</label><input type="text" id="f-key">
+    <label>Name</label><input type="text" id="f-name">
+    <label>Definition source (one line)</label><input type="text" id="f-def">
+    <label>PercentCircularity attestation (why is this construction zero-independent? required)</label>
+    <textarea id="f-attest" rows="2"></textarea>
+    <div class="form-grid">
+      <div style="margin-bottom:8px"><label><input type="checkbox" id="f-zero"> uses_zero_data</label></div>
+      <div style="margin-bottom:8px"><label><input type="checkbox" id="f-wron"> uses_target_wronskian</label></div>
+      <div style="margin-bottom:8px"><label><input type="checkbox" id="f-fit"> uses_spectral_fitting</label></div>
+      <div style="margin-bottom:8px"><label><input type="checkbox" id="f-posthoc"> uses_post_hoc_target_definition</label></div>
+    </div>
+    <label>arithmetic_specificity</label>
+    <select id="f-spec"><option>generic</option><option>prime_specific</option><option>theta_arithmetic</option></select>
+    <h3>Properties (status + certification)</h3>
+    <div id="prop-form"></div>
+    <label>conditional_on (if any status is "conditional", state the unproved premise)</label>
+    <textarea id="f-cond" rows="2"></textarea>
+    <button class="btn" onclick="saveCandidate()">Save candidate</button>
+    <span id="add-msg" style="font-size:13px;color:var(--green);margin-left:10px"></span>
+  </div>
+</div>
+
+<!-- RUNS & SAVED -->
+<div id="view-runs" class="hidden">
+  <div class="card">
+    <h2>Audit history</h2>
+    <div id="run-hist" class="runhist">No runs yet in this browser. Press "Run Audit" on the Dashboard.</div>
+  </div>
+  <div class="card">
+    <h2>Saved registry</h2>
+    <div id="saved-summary" style="font-size:14px"></div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<!-- TUTORIAL MODAL -->
+<div class="modal-bg hidden" id="modal-tut" onclick="if(event.target===this)closeTutorial()">
+  <div class="modal">
+    <h2>Welcome — 2-minute tutorial</h2>
+    <div class="step"><b>1. What this is.</b> A falsification registry for proposed Hilbert-Pólya operator candidates — mathematical constructions tested against fixed rules. Each candidate either passes, survives conditionally, or gets a no-go (REJECTED).</div>
+    <div class="step"><b>2. Reading a candidate.</b> Every candidate is scored on 7 properties (trace, positivity, covariance, self-adjoint, compact resolvent, Weyl law, determinant). Each status is paired with a <i>certification level</i>: floating-point evidence is suggestive only; "proved"/"failed" require interval arithmetic or analytic proof.</div>
+    <div class="step"><b>3. Verdicts.</b> REJECTED = a rule fired (no-go). CONDITIONAL_SURVIVOR = survives if named premises are proven. UNCERTIFIED_INDETERMINATE = not enough certified evidence to judge (e.g. floating-point-only negative). SCHEMA_VIOLATION = malformed record.</div>
+    <div class="step"><b>4. Run the audit.</b> Dashboard → "Run Audit" runs every candidate through the rule engine and shows the verdict table. History is kept under "Runs &amp; Saved".</div>
+    <div class="step"><b>5. Share &amp; export.</b> "Download registry (JSON)" exports everything; "Copy summary" copies a plain-text report. You can also add candidates and paste JSON imports.</div>
+    <button class="btn" onclick="closeTutorial()">Got it</button>
+  </div>
+</div>
+<div id="toast" class="toast hidden"></div>
+
+<script>
+/* ================= DATA ================= */
+const REGISTRY = {
+ "schema_version": 2,
+ "candidates": [
+  {
+   "id": "prime_quantum_graph",
+   "name": "Prime-weighted quantum graph",
+   "definition_source": "Finite graph with prime-associated lengths/weights",
+   "circularity_attestation": "Graph lengths/weights are fixed functions of primes only; no zero data, Wronskian, or spectral fitting enters the construction.",
+   "uses_zero_data": false,
+   "uses_target_wronskian": false,
+   "uses_spectral_fitting": false,
+   "trace_status": "numerical",
+   "trace_certification": "floating_point",
+   "conditional_on": [],
+   "positivity_status": "proved",
+   "positivity_certification": "analytic_proof",
+   "conditional_on_positivity": [],
+   "covariance_status": "not_tested",
+   "covariance_certification": "none",
+   "self_adjoint_status": "proved",
+   "self_adjoint_certification": "analytic_proof",
+   "compact_resolvent_status": "proved",
+   "compact_resolvent_certification": "analytic_proof",
+   "weyl_status": "failed",
+   "weyl_certification": "analytic_proof",
+   "determinant_status": "failed",
+   "determinant_certification": "analytic_proof",
+   "arithmetic_specificity": "generic",
+   "evidence_files": [],
+   "rejection_reasons": [
+    "GUE statistics matched by non-arithmetic controls",
+    "No exact xi determinant",
+    "No exact Weil trace"
+   ],
+   "open_requirements": [],
+   "migration_note": "v1 had no certification fields; positivity/self-adjoint/compact-resolvent are standard finite-quantum-graph facts and legitimately analytic_proof. trace_status stays numerical (v1 said 'numerical' already, consistent, no downgrade needed).",
+   "status_log": [
+    {
+     "timestamp": "unknown-pre-v2",
+     "field": "all",
+     "old": "n/a",
+     "new": "as recorded",
+     "reason": "Migrated from v1 registry recovered after source workspace loss; no finer-grained history available prior to this point.",
+     "evidence_ref": "recovered v1 audit report"
+    }
+   ],
+   "uses_post_hoc_target_definition": false
+  },
+  {
+   "id": "theta_one_sided_factor",
+   "name": "Theta-derived one-sided de Branges factor",
+   "definition_source": "E_-(z) = 2 * integral Phi(u) exp(-izu) du",
+   "circularity_attestation": "Phi(u) is the theta-kernel representation of Xi; construction does not reference zero ordinates or fit to spectral statistics.",
+   "uses_zero_data": false,
+   "uses_target_wronskian": false,
+   "uses_spectral_fitting": false,
+   "trace_status": "proved",
+   "trace_certification": "analytic_proof",
+   "conditional_on": [
+    "Hermite-Biehler inequality for E_-, which positivity_status has already refuted for the direct scalar bridge"
+   ],
+   "positivity_status": "failed",
+   "positivity_certification": "interval_arithmetic",
+   "conditional_on_positivity": [],
+   "covariance_status": "not_tested",
+   "covariance_certification": "none",
+   "self_adjoint_status": "conditional",
+   "self_adjoint_certification": "analytic_proof",
+   "compact_resolvent_status": "not_tested",
+   "compact_resolvent_certification": "none",
+   "weyl_status": "not_tested",
+   "weyl_certification": "none",
+   "determinant_status": "not_tested",
+   "determinant_certification": "none",
+   "arithmetic_specificity": "theta_arithmetic",
+   "evidence_files": [
+    {
+     "path": "https://base44.app/api/apps/6aa04340ca3cddd4746ca284/files/mp/public/6aa04340ca3cddd4746ca284/b5b60887e_xi_integral_representation_notes.md",
+     "type": "doc",
+     "certification": "analytic_proof",
+     "reproducible": false,
+     "command": null,
+     "recovered": true
+    },
+    {
+     "path": "https://base44.app/api/apps/6aa04340ca3cddd4746ca284/files/mp/public/6aa04340ca3cddd4746ca284/0f3a69349_theta_wronskian_arb_tight_certificate.json",
+     "type": "data",
+     "certification": "interval_arithmetic",
+     "reproducible": false,
+     "command": null,
+     "recovered": true,
+     "note": "Data recovered verbatim. Generating script certify_theta_wronskian_arb_tight.py also recovered but NOT independently re-run -- requires python-flint/Arb, uninstallable in this sandbox (no network). An mpmath floating-point cross-check (sanity_check_theta_wronskian_mpmath.py) reproduced W(20)=-5.33510553...e-6 exactly matching the previously-quoted value, and confirmed it falls inside this certified interval -- corroborating but not equivalent to re-running the actual interval-arithmetic proof."
+    },
+    {
+     "path": "https://base44.app/api/apps/6aa04340ca3cddd4746ca284/files/mp/public/6aa04340ca3cddd4746ca284/0baea52b5_certify_theta_wronskian_arb_tight.py",
+     "type": "script",
+     "certification": "interval_arithmetic",
+     "reproducible": false,
+     "command": "python3 certify_theta_wronskian_arb_tight.py",
+     "recovered": true,
+     "note": "Source recovered verbatim. NOT reproducible in this sandbox: requires python-flint (Arb bindings), not installable here (no network). Genuinely different situation from test_matrix_valued_weil_kernel.py and run_exact_bilinear_weil_gaussian.py, which WERE independently re-run and matched bit-for-bit -- this one's reproducible:false reflects an environment limitation, not a missing file."
+    },
+    {
+     "path": "https://base44.app/api/apps/6aa04340ca3cddd4746ca284/files/mp/public/6aa04340ca3cddd4746ca284/795b20ea5_sanity_check_theta_wronskian_mpmath.py",
+     "type": "script",
+     "certification": "floating_point",
+     "reproducible": true,
+     "command": "python3 sanity_check_theta_wronskian_mpmath.py",
+     "note": "New: independent floating-point (non-certified) cross-check written this session since the real Arb script couldn't be run. Matches the interval and the previously-quoted W_5(20) value exactly. Does not upgrade the certification level of the Wronskian result -- floating-point agreement is supporting evidence, not proof."
+    },
+    {
+     "path": "https://base44.app/api/apps/6aa04340ca3cddd4746ca284/files/mp/public/6aa04340ca3cddd4746ca284/0add0a5c4_proof_scalar_theta_weil_bridge_nogo.md",
+     "type": "doc",
+     "certification": "interval_arithmetic",
+     "reproducible": false,
+     "command": null,
+     "recovered": true
+    },
+    {
+     "path": "https://base44.app/api/apps/6aa04340ca3cddd4746ca284/files/mp/public/6aa04340ca3cddd4746ca284/79ad25e00_correlation_kernel_weil_theorem.md",
+     "type": "doc",
+     "certification": "analytic_proof",
+     "reproducible": false,
+     "command": null,
+     "recovered": true,
+     "note": "Filename correspondence to the original file manifest uncertain (see file's own header) -- content is what matters and is transcribed faithfully. Formally addresses this candidate's own open_requirement on non-direct matrix constructions: possible in principle, no non-tautological example exists yet."
+    }
+   ],
+   "rejection_reasons": [
+    "Certified negative Wronskian (interval-arithmetic enclosure, not floating point) rules out direct scalar positive-unitary correlation",
+    "Hermite-Biehler inequality not established"
+   ],
+   "open_requirements": [
+    "Formalize u>8 tail in executable certificate",
+    "Determine whether any non-direct matrix construction applies -- FORMALLY ANSWERED (not resolved) in correlation_kernel_weil_theorem.md: logically possible via operator-valued positive-definiteness, but the only concrete realization found (signed-measure L^2(|W|) construction) is tautological and gives continuous spectrum, not the Riemann discrete spectrum. No non-tautological construction has been produced. Still open, but no longer an unexamined question."
+   ],
+   "migration_note": "CORRECTED (previous version of this note stated an interval of [-5.459e-6,-5.211e-6] over x in [19.99,20.01] -- that was not sourced from any recovered document and was wrong; struck out here rather than left in place). The recovered source document gives the actual certified value: five theta summands, 180-bit Arb precision, 200,000 subdivisions, at x=20 exactly: W(20) in [-8.25011781628766e-6, -2.42009354494050e-6]. An earlier lower-precision computation (five summands, 60/80/100-digit independent runs agreeing to 50+ decimal places) gave the point estimate W_5(20)=-5.3351055362492714179767878666e-6, which sits inside the later Arb interval, consistent. positivity_certification: interval_arithmetic is accurate. The recovered document explicitly flags the u>8 tail bound as not yet inserted into the executable certificate -- retained verbatim in open_requirements, still open.",
+   "status_log": [
+    {
+     "timestamp": "unknown-pre-v2",
+     "field": "positivity_status",
+     "old": "floating_point sign only (~-5.335e-6)",
+     "new": "interval_arithmetic enclosure, entirely negative on [19.99,20.01]",
+     "reason": "Upgraded via 2nd/3rd-order Taylor-form rigorous quadrature with AD/jet interval arithmetic in prior session.",
+     "evidence_ref": "theta_wronskian_arb_tight_certificate.json"
+    }
+   ],
+   "uses_post_hoc_target_definition": false
+  },
+  {
+   "id": "weil_gaussian_convolution",
+   "name": "Exact convolution-bilinear Weil Gaussian form",
+   "definition_source": "Q_W(f,g) = W(f * g~) on Gaussian translates",
+   "circularity_attestation": "Defined purely from the Guinand-Weil explicit formula applied to Gaussian test functions; no zero ordinates or fitted parameters used.",
+   "uses_zero_data": false,
+   "uses_target_wronskian": false,
+   "uses_spectral_fitting": false,
+   "trace_status": "proved",
+   "trace_certification": "analytic_proof",
+   "conditional_on": [
+    "Positivity of the exact Weil form, currently numerical_negative not certified"
+   ],
+   "positivity_status": "numerical_negative",
+   "positivity_certification": "floating_point",
+   "conditional_on_positivity": [],
+   "covariance_status": "proved",
+   "covariance_certification": "analytic_proof",
+   "self_adjoint_status": "conditional",
+   "self_adjoint_certification": "analytic_proof",
+   "compact_resolvent_status": "not_tested",
+   "compact_resolvent_certification": "none",
+   "weyl_status": "not_tested",
+   "weyl_certification": "none",
+   "determinant_status": "not_tested",
+   "determinant_certification": "none",
+   "arithmetic_specificity": "prime_specific",
+   "evidence_files": [
+    {
+     "path": "https://base44.app/api/apps/6aa04340ca3cddd4746ca284/files/mp/public/6aa04340ca3cddd4746ca284/bdfcc311f_exact_bilinear_weil_form.md",
+     "type": "doc",
+     "certification": "analytic_proof",
+     "reproducible": false,
+     "command": null,
+     "recovered": true
+    },
+    {
+     "path": "https://base44.app/api/apps/6aa04340ca3cddd4746ca284/files/mp/public/6aa04340ca3cddd4746ca284/099c27939_exact_bilinear_weil_gaussian_results.json",
+     "type": "data",
+     "certification": "floating_point",
+     "reproducible": true,
+     "command": "python3 run_exact_bilinear_weil_gaussian.py"
+    },
+    {
+     "path": "https://base44.app/api/apps/6aa04340ca3cddd4746ca284/files/mp/public/6aa04340ca3cddd4746ca284/efa5516e2_verify_weil_terms.py",
+     "type": "script",
+     "certification": "floating_point",
+     "reproducible": true,
+     "command": "python3 verify_weil_terms.py",
+     "recovered": true,
+     "note": "Independent term-by-term cross-check (separate pole/prime/gamma matrices, M=12), recovered and re-run: output matched documented values exactly (pole trace=61.30183387988408, prime trace=-24.030467369945022, gamma trace=-10.376832091769275). This is a DIFFERENT decomposition than the M=12/24/36/48 sweep above -- confirms the corrected pole/prime/gamma implementation independently, doesn't duplicate it."
+    },
+    {
+     "path": "bilinear_weil_cutoff_results.json",
+     "type": "data",
+     "certification": "floating_point",
+     "reproducible": false,
+     "command": null,
+     "note": "STILL NOT RECOVERED. Now known (from a later file manifest) to be generated by test_bilinear_weil_cutoff_convergence.py, which was also not recovered. The 5k/100k/1M prime-power cutoff-stability claim (identical min_eigenvalue -3.3268211010 and negative_count 4 at all three cutoffs, per that manifest's own table) is stated in prose/table but the generating script's content is still missing. Genuinely missing, not just unverified -- flag stays.",
+     "missing": true
+    },
+    {
+     "path": "https://base44.app/api/apps/6aa04340ca3cddd4746ca284/files/mp/public/6aa04340ca3cddd4746ca284/1f9abc389_theta_hermite_weil_results.json",
+     "type": "data",
+     "certification": "floating_point",
+     "reproducible": true,
+     "command": "python3 run_theta_hermite_weil_experiment.py",
+     "recovered": true,
+     "note": "NEW evidence, found in Darryl's notes export, not previously in this registry. A preregistered experiment (parameters fixed before inspecting eigenvalues) testing TWO additional test-function families -- theta-kernel translates and Hermite functions n=0..6, 7 fixed translations each, dimension 49 -- under the same exact bilinear Weil form. Script reconstructed by hand (indentation was stripped by the notes export) and independently re-run: matched documented output to every digit. Both families stably indefinite across all three prime cutoffs (theta: min_eigenvalue -4.304028597712... identical to 12 digits at 5k/100k/1M, 26/49 negative; Hermite: min_eigenvalue -34.46/-53.20/-53.24, 25-30/49 negative). This broadens the indefiniteness evidence beyond Gaussians specifically to two structurally different families, still floating-point only."
+    },
+    {
+     "path": "https://base44.app/api/apps/6aa04340ca3cddd4746ca284/files/mp/public/6aa04340ca3cddd4746ca284/d2646355f_trace_preserving_positivity_obstruction.md",
+     "type": "doc",
+     "certification": "analytic_proof",
+     "reproducible": false,
+     "command": null,
+     "recovered": true,
+     "note": "NEW theorem, found in Darryl's notes export, not previously logged anywhere. Proves that IF the exact Weil form is indefinite anywhere (once certified, not just numerically), THEN no positive projection, shift, or replacement agreeing with it on the full test space can preserve the exact prime/gamma trace. This directly answers this candidate's own open_requirement below -- see the updated text."
+    }
+   ],
+   "rejection_reasons": [
+    "Floating-point (mpmath) negative eigenvalues on the sigma=0.42, dim-12 test matrix, stable across prime cutoffs 5k/100k/1M -- NOT interval-certified"
+   ],
+   "open_requirements": [
+    "Find a principled positive arithmetic modification without changing exact trace -- SHARPENED (not resolved) by trace_preserving_positivity_obstruction.md: this is proved IMPOSSIBLE outright, not merely open, once indefiniteness is certified on even one admissible test function (no positive projection/shift/replacement can preserve the exact trace). The real remaining task is therefore the interval-arithmetic certification below, not a search for a fix -- if that certification succeeds, this requirement should be struck, not left open, and the candidate should move toward a certified failed/indefinite rejection.",
+    "Re-run under interval arithmetic before this can legitimately be called 'indefinite' rather than 'numerical_negative' -- now the load-bearing remaining step, evidence across THREE test-function families (Gaussian, theta-kernel translates, Hermite) all stably negative across three orders of magnitude of prime cutoff",
+    "Evaluate whether a rank-trace/signature decomposition (see literature/2026-alpoge-furman-claude-two-thirds.md) can extract a weaker unconditional statement from this matrix even without full positivity -- open question, not yet attempted, see note for what would need to transfer"
+   ],
+   "migration_note": "REAL FIX, NOT COSMETIC: v1 recorded positivity_status as 'indefinite', which under the v2 schema requires interval_arithmetic or analytic_proof certification. The underlying evidence was floating-point (numpy eigvalsh) -- that is floating_point certification. Under v2 rules this is downgraded to numerical_negative, and rejection rule 2 (which only fires on indefinite) does NOT automatically apply to this candidate anymore. UPDATE: exact_bilinear_weil_form.md and the generating script for exact_bilinear_weil_gaussian_results.json have both been RECOVERED and independently re-run in this session, matching documented values to every reported digit across M=12,24,36,48 (min_eigenvalue -3.327/-3.734/-3.887/-29.605, negative_count 4/8/12/16). Notably the 'prime' construction stays much closer to well-behaved than its non-arithmetic 'control' comparison at every M (e.g. M=36: prime min_eigenvalue -3.89 vs control -179.90) -- consistently negative, never positive, but visibly less pathological than the control, which may be worth a closer look later. bilinear_weil_cutoff_results.json (the 5k/100k/1M prime-cutoff-stability claim from section 10 of the recovered document) is still genuinely missing -- not included in what was recovered, flagged honestly rather than assumed. IMPORTANT CAVEAT (unchanged from before): a separate, later, dps=70 exact bilinear Weil form computation on Gaussian translates at sigma=0.10, delta=0.30 found ZERO negative eigenvalues through N=28 and retracted earlier N=16-28 negative findings as insufficient numerical margin -- that was a DIFFERENT (sigma, delta) configuration than the sigma=0.42 result here. Not a contradiction, just a reminder these are different tested families.",
+   "status_log": [
+    {
+     "timestamp": "unknown-pre-v2",
+     "field": "positivity_status",
+     "old": "indefinite (v1 label)",
+     "new": "numerical_negative",
+     "reason": "v1 'indefinite' was backed only by mpmath floating-point eigenvalues, not an interval-arithmetic or analytic certificate. v2 schema reserves 'indefinite' for certified mixed-sign results. Relabeled to reflect actual evidence strength; this is a downgrade in confidence, not a new finding.",
+     "evidence_ref": "exact_bilinear_weil_gaussian_results.json (floating point, sigma=0.42, dim 12)"
+    }
+   ],
+   "uses_post_hoc_target_definition": false
+  },
+  {
+   "id": "prime_positive_reservoir",
+   "name": "Positive prime-power trace reservoir",
+   "definition_source": "Diagonal A e_p^k = k log(p) e_p^k with positive von Mangoldt weights",
+   "circularity_attestation": "Diagonal operator defined directly from prime powers and von Mangoldt weights; no zero or Wronskian dependence.",
+   "uses_zero_data": false,
+   "uses_target_wronskian": false,
+   "uses_spectral_fitting": false,
+   "trace_status": "proved",
+   "trace_certification": "analytic_proof",
+   "conditional_on": [],
+   "positivity_status": "proved",
+   "positivity_certification": "analytic_proof",
+   "conditional_on_positivity": [],
+   "covariance_status": "not_tested",
+   "covariance_certification": "none",
+   "self_adjoint_status": "proved",
+   "self_adjoint_certification": "analytic_proof",
+   "compact_resolvent_status": "proved",
+   "compact_resolvent_certification": "analytic_proof",
+   "weyl_status": "failed",
+   "weyl_certification": "analytic_proof",
+   "determinant_status": "failed",
+   "determinant_certification": "analytic_proof",
+   "arithmetic_specificity": "prime_specific",
+   "evidence_files": [
+    {
+     "path": "positive_prime_trace_results.json",
+     "type": "data",
+     "certification": "analytic_proof",
+     "reproducible": false,
+     "command": null,
+     "note": "STILL NOT RECOVERED. Only filename references found in the notes export, not the actual data/script content.",
+     "missing": true
+    },
+    {
+     "path": "https://base44.app/api/apps/6aa04340ca3cddd4746ca284/files/mp/public/6aa04340ca3cddd4746ca284/eeec6854e_same_operator_trace_support_obstruction.md",
+     "type": "doc",
+     "certification": "analytic_proof",
+     "reproducible": false,
+     "command": null,
+     "recovered": true,
+     "note": "Found in full within a saved Manus chat transcript in Darryl's Notes export. Also directly informs conditional_weil_gns's correlation-kernel architecture and twin_dirac_susy_factorization's two-operator design -- see the file's own closing section."
+    }
+   ],
+   "rejection_reasons": [
+    "Logarithmic prime-power spectrum has wrong counting law",
+    "Does not produce Xi determinant"
+   ],
+   "open_requirements": [
+    "Canonical relation to a Hamiltonian with Riemann Weyl law"
+   ],
+   "migration_note": "No certification downgrade needed; diagonal spectrum, self-adjointness, positivity, and compact resolvent are elementary analytic facts about this explicit diagonal operator, correctly analytic_proof.",
+   "status_log": [
+    {
+     "timestamp": "unknown-pre-v2",
+     "field": "all",
+     "old": "n/a",
+     "new": "as recorded",
+     "reason": "Migrated from v1 registry.",
+     "evidence_ref": "recovered v1 audit report"
+    }
+   ],
+   "uses_post_hoc_target_definition": false
+  },
+  {
+   "id": "conditional_weil_gns",
+   "name": "Conditional Weil/GNS translation generator",
+   "definition_source": "Positive Weil form followed by translation-invariant GNS completion",
+   "circularity_attestation": "Construction is conditional on positivity of the exact Weil form (itself zero-independent); no zero data used in the construction step.",
+   "uses_zero_data": false,
+   "uses_target_wronskian": false,
+   "uses_spectral_fitting": false,
+   "trace_status": "conditional",
+   "trace_certification": "analytic_proof",
+   "conditional_on": [
+    "Full unconditional positivity of the exact Weil form (RH-equivalent in strength)"
+   ],
+   "positivity_status": "conditional",
+   "positivity_certification": "analytic_proof",
+   "conditional_on_positivity": [
+    "Full unconditional positivity of the exact Weil form (RH-equivalent in strength)"
+   ],
+   "covariance_status": "proved",
+   "covariance_certification": "analytic_proof",
+   "self_adjoint_status": "conditional",
+   "self_adjoint_certification": "analytic_proof",
+   "compact_resolvent_status": "conditional",
+   "compact_resolvent_certification": "analytic_proof",
+   "weyl_status": "conditional",
+   "weyl_certification": "analytic_proof",
+   "determinant_status": "conditional",
+   "determinant_certification": "analytic_proof",
+   "arithmetic_specificity": "prime_specific",
+   "evidence_files": [
+    {
+     "path": "conditional_weil_gns_theorem.md",
+     "type": "doc",
+     "certification": "analytic_proof",
+     "reproducible": false,
+     "command": null,
+     "note": "STILL NOT RECOVERED. This is a distinct file from conditional_weil_translation_operator.md (below) -- do not conflate; recovering one did not recover the other.",
+     "missing": true
+    },
+    {
+     "path": "https://base44.app/api/apps/6aa04340ca3cddd4746ca284/files/mp/public/6aa04340ca3cddd4746ca284/e9974c4d2_conditional_weil_translation_operator.md",
+     "type": "doc",
+     "certification": "analytic_proof",
+     "reproducible": false,
+     "command": null,
+     "recovered": true
+    }
+   ],
+   "rejection_reasons": [],
+   "open_requirements": [
+    "Unconditional positivity",
+    "Independent compactness and determinant theorems"
+   ],
+   "migration_note": "All 'conditional' fields now carry explicit conditional_on statements per v2 rule 3 -- v1 had the dependency stated only in prose in the audit report, not machine-checkable per field.",
+   "status_log": [
+    {
+     "timestamp": "unknown-pre-v2",
+     "field": "all",
+     "old": "n/a",
+     "new": "as recorded",
+     "reason": "Migrated from v1 registry; sole conditional survivor, status unchanged.",
+     "evidence_ref": "recovered v1 audit report"
+    }
+   ],
+   "uses_post_hoc_target_definition": false
+  },
+  {
+   "id": "raw_matrix_weil_gaussians",
+   "name": "Raw matrix-valued Gaussian Weil kernel",
+   "definition_source": "K_ij(d) = Q_W(tau_d f_i, f_j) for Gaussian vectors",
+   "circularity_attestation": "Matrix built from translation-covariant Gaussian vectors and the exact Weil form; no zero ordinates or fitted parameters.",
+   "uses_zero_data": false,
+   "uses_target_wronskian": false,
+   "uses_spectral_fitting": false,
+   "trace_status": "proved",
+   "trace_certification": "analytic_proof",
+   "conditional_on": [
+    "Positivity of the raw translation-block kernel, currently numerical_negative not certified"
+   ],
+   "positivity_status": "numerical_negative",
+   "positivity_certification": "floating_point",
+   "conditional_on_positivity": [],
+   "covariance_status": "proved",
+   "covariance_certification": "analytic_proof",
+   "self_adjoint_status": "conditional",
+   "self_adjoint_certification": "analytic_proof",
+   "compact_resolvent_status": "not_tested",
+   "compact_resolvent_certification": "none",
+   "weyl_status": "not_tested",
+   "weyl_certification": "none",
+   "determinant_status": "not_tested",
+   "determinant_certification": "none",
+   "arithmetic_specificity": "prime_specific",
+   "evidence_files": [
+    {
+     "path": "https://base44.app/api/apps/6aa04340ca3cddd4746ca284/files/mp/public/6aa04340ca3cddd4746ca284/f297d427e_matrix_valued_weil_results.json",
+     "type": "data",
+     "certification": "floating_point",
+     "reproducible": false,
+     "command": null
+    },
+    {
+     "path": "https://base44.app/api/apps/6aa04340ca3cddd4746ca284/files/mp/public/6aa04340ca3cddd4746ca284/16d5702ce_test_matrix_valued_weil_kernel.py",
+     "type": "script",
+     "certification": "floating_point",
+     "reproducible": true,
+     "command": "python3 test_matrix_valued_weil_kernel.py"
+    }
+   ],
+   "rejection_reasons": [
+    "21-by-21 translation block has five negative eigenvalues (floating point, not interval-certified)"
+   ],
+   "open_requirements": [
+    "Different canonical arithmetic vectors or positive representation",
+    "Re-run under interval arithmetic before calling this 'indefinite' rather than 'numerical_negative'",
+    "Evaluate whether a rank-trace/signature decomposition (see literature/2026-alpoge-furman-claude-two-thirds.md) can extract a weaker unconditional statement from this matrix even without full positivity -- open question, not yet attempted, see note for what would need to transfer"
+   ],
+   "migration_note": "REAL FIX, same pattern as weil_gaussian_convolution: v1 called this 'indefinite' on a floating-point (numpy eigenvalue) basis. Downgraded to numerical_negative under v2. test_matrix_valued_weil_kernel.py has since been RECOVERED verbatim from Darryl's source document and independently re-run in this session: output matched the documented values to every reported digit (K0_min=1.9326199268771522, block_min=-4.470728478553433, block_negative_count=5, block_max=16.892741453781674). This is now a genuinely reproducible floating-point result, not just a citation -- still floating_point certification (numpy eigvalsh, not interval arithmetic), so it still cannot license 'indefinite' under v2 rule 2, but the evidence itself is now solid.",
+   "status_log": [
+    {
+     "timestamp": "unknown-pre-v2",
+     "field": "positivity_status",
+     "old": "indefinite (v1 label)",
+     "new": "numerical_negative",
+     "reason": "Same certification-level fix as weil_gaussian_convolution: v1 'indefinite' was backed only by floating-point eigenvalues.",
+     "evidence_ref": "matrix_valued_weil_results.json (floating point, 21x21 block)"
+    }
+   ],
+   "uses_post_hoc_target_definition": false
+  },
+  {
+   "id": "prime_gap_jacobi_operator",
+   "name": "Prime-gap coupled Jacobi operator",
+   "definition_source": "Tridiagonal-like real symmetric operator on ell^2(primes): A_pp = log p, A_pp' = sqrt(Lambda(p)Lambda(p'))/(p'-p) for consecutive primes p<p', 0 otherwise.",
+   "circularity_attestation": "Entries are fixed functions of prime values and gaps only; no zero ordinate, Wronskian sign, or spectral-fit parameter enters the construction.",
+   "uses_zero_data": false,
+   "uses_target_wronskian": false,
+   "uses_spectral_fitting": false,
+   "trace_status": "not_tested",
+   "trace_certification": "none",
+   "conditional_on": [],
+   "positivity_status": "not_tested",
+   "positivity_certification": "none",
+   "conditional_on_positivity": [],
+   "covariance_status": "not_tested",
+   "covariance_certification": "none",
+   "self_adjoint_status": "not_tested",
+   "self_adjoint_certification": "none",
+   "compact_resolvent_status": "not_tested",
+   "compact_resolvent_certification": "none",
+   "weyl_status": "not_tested",
+   "weyl_certification": "none",
+   "determinant_status": "not_tested",
+   "determinant_certification": "none",
+   "arithmetic_specificity": "prime_specific",
+   "evidence_files": [],
+   "rejection_reasons": [],
+   "open_requirements": [
+    "Check essential self-adjointness (growth/Carleman condition, not just real-symmetry)",
+    "Compute eigenvalue-counting asymptotics and compare to Riemann Weyl law -- this is the actual open question the construction targets, not yet attempted",
+    "The p'-p coupling weight was chosen as a plausible non-diagonal modification, not derived from a specific argument for why it should reproduce the correct counting law -- weakest-motivated of the three proposed in this batch, deprioritized accordingly"
+   ],
+   "migration_note": "Proposed by Claude at Darryl's request for a batch of candidate generations (session note: Claude flagged this as the weakest-motivated of the three, worth logging but not prioritizing).",
+   "status_log": [
+    {
+     "timestamp": "2026-09-04",
+     "field": "all",
+     "old": "n/a",
+     "new": "proposed, not_tested",
+     "reason": "Added via requested candidate-generation batch; targets prime_positive_reservoir's wrong-counting-law rejection.",
+     "evidence_ref": "conversation record"
+    }
+   ],
+   "uses_post_hoc_target_definition": false
+  },
+  {
+   "id": "twin_dirac_susy_factorization",
+   "name": "Twin Dirac/SUSY factorization operator (D, D*)",
+   "definition_source": "D: ell^2(prime powers) -> Gaussian-translate Hilbert space, D e_n := sqrt(Lambda(n)) * h_{log n} (h_ab the Gaussian-convolution window from the finite Weil-matrix certificate work). D*D and DD* isospectral away from kernel by standard SUSY-QM factorization.",
+   "circularity_attestation": "D is built directly from von Mangoldt weights and prime-power logarithms only; no zero ordinate or fitted parameter enters.",
+   "uses_zero_data": false,
+   "uses_target_wronskian": false,
+   "uses_spectral_fitting": false,
+   "trace_status": "not_tested",
+   "trace_certification": "none",
+   "conditional_on": [],
+   "positivity_status": "not_tested",
+   "positivity_certification": "none",
+   "conditional_on_positivity": [],
+   "covariance_status": "not_tested",
+   "covariance_certification": "none",
+   "self_adjoint_status": "not_tested",
+   "self_adjoint_certification": "none",
+   "compact_resolvent_status": "not_tested",
+   "compact_resolvent_certification": "none",
+   "weyl_status": "not_tested",
+   "weyl_certification": "none",
+   "determinant_status": "not_tested",
+   "determinant_certification": "none",
+   "arithmetic_specificity": "prime_specific",
+   "evidence_files": [],
+   "rejection_reasons": [],
+   "open_requirements": [
+    "Check boundedness of D (unchecked)",
+    "Compute Weyl asymptotics of DD* on the Gaussian-translate side -- the factorization relocates the hard problem from the prime side to this side, it does not obviously solve it",
+    "This is the structurally most promising of the three proposed in this batch (separates the arithmetic-trace-carrying operator from the correct-spectrum-carrying operator, addressing the same-operator obstruction that killed prime_positive_reservoir), but confidence is in the shape of the idea, not yet in any result",
+    "Cross-reference: correlation_kernel_weil_theorem.md's tautology warning applies directly here -- D is built from prime powers/von Mangoldt weights before any target quantity is referenced, which is the correct order, but that ordering is the entire thing standing between this candidate and the same tautology trap that sank the signed-measure route on theta_one_sided_factor. Keep it that way as the construction develops."
+   ],
+   "migration_note": "Proposed by Claude at Darryl's request for a batch of candidate generations, directly following up on the twin-operator direction Darryl flagged as his next planned attempt.",
+   "status_log": [
+    {
+     "timestamp": "2026-09-04",
+     "field": "all",
+     "old": "n/a",
+     "new": "proposed, not_tested",
+     "reason": "Added via requested candidate-generation batch; targets the same-operator trace/spectrum obstruction noted on prime_positive_reservoir.",
+     "evidence_ref": "conversation record"
+    }
+   ],
+   "uses_post_hoc_target_definition": false
+  },
+  {
+   "id": "paired_theta_hermite_biehler",
+   "name": "Paired theta Hermite-Biehler construction (E, E*)",
+   "definition_source": "Genuine de Branges pair E = A - iB, E* = A + iB built from the same theta/xi integral-representation data as theta_one_sided_factor, tested via |E(z)| > |E*(z)| on the upper half-plane (the actual Hermite-Biehler criterion) rather than the single scalar Wronskian sign check that already failed.",
+   "circularity_attestation": "Construction uses only the theta-kernel representation of Xi; no zero ordinate or fitted parameter enters.",
+   "uses_zero_data": false,
+   "uses_target_wronskian": false,
+   "uses_spectral_fitting": false,
+   "trace_status": "not_tested",
+   "trace_certification": "none",
+   "conditional_on": [],
+   "positivity_status": "not_tested",
+   "positivity_certification": "none",
+   "conditional_on_positivity": [],
+   "covariance_status": "not_tested",
+   "covariance_certification": "none",
+   "self_adjoint_status": "not_tested",
+   "self_adjoint_certification": "none",
+   "compact_resolvent_status": "not_tested",
+   "compact_resolvent_certification": "none",
+   "weyl_status": "not_tested",
+   "weyl_certification": "none",
+   "determinant_status": "not_tested",
+   "determinant_certification": "none",
+   "arithmetic_specificity": "theta_arithmetic",
+   "evidence_files": [
+    {
+     "path": "https://base44.app/api/apps/6aa04340ca3cddd4746ca284/files/mp/public/6aa04340ca3cddd4746ca284/b5b60887e_xi_integral_representation_notes.md",
+     "type": "doc",
+     "certification": "analytic_proof",
+     "reproducible": false,
+     "command": null,
+     "recovered": true
+    }
+   ],
+   "rejection_reasons": [],
+   "open_requirements": [
+    "UNBLOCKED: exact theta kernel Phi(u) = Sum (4pi^2 n^4 e^{9u/2} - 6pi n^2 e^{5u/2}) e^{-pi n^2 e^{2u}} now recovered in xi_integral_representation_notes.md. Natural E* candidate is E_-^#(z) = E_-(-z); the actual test is |E_-^#(z)| < |E_-(z)| for Im(z)>0, which is a DIFFERENT statement from the real-line Wronskian sign already certified negative for theta_one_sided_factor -- not yet known whether it inherits the same failure.",
+    "First concrete step: evaluate both sides on a grid near z=20+iy, y>0 small, using the same 5-term-plus-tail truncation and Arb precision validated on the Wronskian. Not yet attempted.",
+    "Cheapest of the three batch candidates to falsify once set up -- still the first one to actually test"
+   ],
+   "migration_note": "Proposed by Claude at Darryl's request for a batch of candidate generations, directly answering theta_one_sided_factor's own open_requirements. UNBLOCKED as of this session: Darryl recovered the original source document containing the exact Phi(u) formula, superseding the earlier guessed (and wrong) coefficients. Ready to attempt.",
+   "status_log": [
+    {
+     "timestamp": "2026-09-04",
+     "field": "all",
+     "old": "n/a",
+     "new": "proposed, not_tested, blocked on missing source file",
+     "reason": "Added via requested candidate-generation batch; targets theta_one_sided_factor's own open_requirements.",
+     "evidence_ref": "conversation record"
+    }
+   ],
+   "uses_post_hoc_target_definition": false
+  }
+ ]
+};
+/* ================= AUDIT ENGINE (Manus v2 rules) ================= */
+const CERT_LEVELS=["none","floating_point","interval_arithmetic","analytic_proof"];
+const STRONG=new Set(["proved","failed","indefinite"]);
+const STRONG_CERTS=new Set(["interval_arithmetic","analytic_proof"]);
+const NUMERICAL=new Set(["numerical","numerical_positive","numerical_negative"]);
+const PROP_FIELDS=["trace","positivity","covariance","self_adjoint","compact_resolvent","weyl","determinant"];
+const VOTES=["SCHEMA_VIOLATION","REJECTED","UNCERTIFIED_INDETERMINATE","CONDITIONAL_SURVIVOR","UNCONDITIONAL_SURVIVOR"];
+
+function schemaViolations(c){
+  const v=[];
+  for(const f of ["uses_zero_data","uses_target_wronskian","uses_spectral_fitting","uses_post_hoc_target_definition"])
+    if(typeof c[f]!=="boolean")v.push("missing or non-boolean '"+f+"'");
+  if(!c.circularity_attestation||!c.circularity_attestation.trim())v.push("missing circularity_attestation (schema §7)");
+  for(const f of PROP_FIELDS){
+    const st=c[f+"_status"],cert=c[f+"_certification"];
+    if(st===undefined)continue;
+    if(!CERT_LEVELS.includes(cert)){v.push(f+"_status='"+st+"' has invalid/missing certification '"+cert+"'");continue;}
+    if(STRONG.has(st)&&!STRONG_CERTS.has(cert))v.push(f+"_status='"+st+"' requires interval_arithmetic or analytic_proof, got '"+cert+"'");
+    if(NUMERICAL.has(st)&&cert!=="floating_point")v.push(f+"_status='"+st+"' requires certification 'floating_point'");
+    if(st==="not_tested"&&cert!=="none")v.push(f+"_status='not_tested' requires certification 'none'");
+    if(st==="conditional"){
+      const cond=(f==="positivity")?c.conditional_on_positivity:c.conditional_on;
+      if(!cond||!cond.length)v.push(f+"_status='conditional' requires non-empty conditional_on (schema §3)");
+    }
+  }
+  if(!c.status_log||!c.status_log.length)v.push("missing status_log (append-only audit trail, schema §5)");
+  return v;
+}
+function classify(c){
+  const violations=schemaViolations(c);
+  if(violations.length)return{verdict:"SCHEMA_VIOLATION",reasons:violations,missing:[]};
+  const reasons=[];
+  if(c.uses_zero_data||c.uses_target_wronskian||c.uses_spectral_fitting)
+    return{verdict:"REJECTED",reasons:["Rule 1 (circularity): construction uses zero data, the target Wronskian, or spectral fitting."],missing:[]};
+  if(c.uses_post_hoc_target_definition)
+    return{verdict:"REJECTED",reasons:["Rule 7 (tautological): space/operator/vectors were defined from the target function or known zero set after the fact."],missing:[]};
+  const strong=(f)=>STRONG.has(c[f+"_status"])&&STRONG_CERTS.has(c[f+"_certification"]);
+  if(strong("positivity")&&(c.positivity_status==="failed"||c.positivity_status==="indefinite"))
+    reasons.push("Rule 2 (positivity): positivity_status='"+c.positivity_status+"' certified via "+c.positivity_certification+".");
+  if(strong("weyl")&&c.weyl_status==="failed")reasons.push("Rule 3 (Weyl law): weyl_status='failed' certified via "+c.weyl_certification+".");
+  if(strong("determinant")&&c.determinant_status==="failed")reasons.push("Rule 4 (determinant): determinant_status='failed' certified via "+c.determinant_certification+".");
+  if(c.trace_status==="proved"&&c.arithmetic_specificity==="generic")
+    reasons.push("Rule 5: trace_status='proved' but arithmetic_specificity='generic' — GUE statistics alone do not satisfy an exact-trace claim.");
+  if(strong("trace")&&c.trace_status==="failed")reasons.push("trace_status='failed' certified via "+c.trace_certification+".");
+  if(reasons.length)return{verdict:"REJECTED",reasons,missing:[]};
+  const unc=[];
+  for(const f of PROP_FIELDS)
+    if(c[f+"_status"]==="numerical_negative"&&c[f+"_certification"]==="floating_point")
+      unc.push(f+"_status='numerical_negative' (floating_point only — v2 withholds judgment pending interval-arithmetic re-test)");
+  if(unc.length)return{verdict:"UNCERTIFIED_INDETERMINATE",reasons:unc,missing:[]};
+  const cond=[];
+  for(const f of PROP_FIELDS)
+    if(c[f+"_status"]==="conditional")
+      cond.push(f+"_status='conditional' on ["+(((f==="positivity")?c.conditional_on_positivity:c.conditional_on)||[]).join("; ")+"]");
+  if(cond.length)return{verdict:"CONDITIONAL_SURVIVOR",reasons:cond,missing:[]};
+  if(PROP_FIELDS.every(f=>c[f+"_status"]==="proved"))
+    return{verdict:"UNCONDITIONAL_SURVIVOR",reasons:["All required properties proved with valid certification."],missing:[]};
+  return{verdict:"UNCERTIFIED_INDETERMINATE",reasons:["Not enough proved/conditional fields to classify further; not_tested/numerical fields remain."],missing:[]};
+}
+/* ================= STATE ================= */
+function ls(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function lss(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function allCandidates(){return REGISTRY.candidates.concat(ls("opreg_added",[]))}
+function verdictMap(){const m=ls("opreg_verdicts",{});return m}
+function latestVerdict(c){const m=verdictMap();return m[c.candidate_key||c.id]}
+function esc(s){return String(s??"").replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]))}
+
+/* ================= UI ================= */
+let currentView="dash";
+function showTab(v){currentView=v;
+  for(const t of ["dash","cand","add","runs","detail"])document.getElementById("view-"+t).classList.add("hidden");
+  document.getElementById("view-"+v).classList.remove("hidden");
+  for(const t of ["dash","cand","add","runs"])document.getElementById("tab-"+t).classList.toggle("active",t===v);
+  if(v==="cand")renderCandidates();
+  if(v==="runs")renderRuns();
+  if(v==="dash")renderDashboard();
+  window.scrollTo(0,0);
+}
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.remove("hidden");setTimeout(()=>t.classList.add("hidden"),2200)}
+
+function renderDashboard(){
+  const res=ls("opreg_last_results",null);
+  const counts={};for(const v of VOTES)counts[v]=0;
+  const cands=allCandidates();
+  const vm=verdictMap();
+  for(const c of cands){const v=vm[c.candidate_key||c.id];if(v)counts[v]++;}
+  document.getElementById("tiles").innerHTML=
+    `<div class="tile"><div class="n">${cands.length}</div><div class="lbl">Candidates</div></div>`+
+    VOTES.map(v=>`<div class="tile"><div class="n">${counts[v]}</div><div class="lbl">${v.replace(/_/g," ")}</div></div>`).join("");
+  document.getElementById("dash-title").textContent=res?("Audit results — run "+new Date(res.run_at).toLocaleString()):"Audit results — not yet run";
+  const tb=document.querySelector("#results-table tbody");
+  if(!res){tb.innerHTML=`<tr><td colspan="3" style="color:var(--muted)">Press "Run Audit" to classify all candidates.</td></tr>`;return;}
+  tb.innerHTML=res.results.map(r=>`<tr style="cursor:pointer" onclick="openDetail('${esc(r.key)}')"><td><b>${esc(r.name)}</b></td><td><span class="badge b-${r.verdict}">${r.verdict}</span></td><td style="font-size:13px">${esc(r.reasons[0]||"")}${r.missing.length?`<br><span class="miss">MISSING: ${esc(r.missing.join(", "))}</span>`:""}</td></tr>`).join("");
+}
+function runAudit(){
+  const cands=allCandidates();
+  const results=cands.map(c=>{
+    const r=classify(c);
+    return{key:c.candidate_key||c.id,name:c.name,verdict:r.verdict,reasons:r.reasons,missing:(c.evidence_files||[]).filter(e=>e.missing).map(e=>e.path)};
+  });
+  const counts={};for(const v of VOTES)counts[v]=results.filter(r=>r.verdict===v).length;
+  const run={run_at:new Date().toISOString(),results,counts,total:cands.length};
+  lss("opreg_last_results",run);
+  const hist=ls("opreg_hist",[]);hist.unshift(run);lss("opreg_hist",hist.slice(0,50));
+  const vm={};for(const r of results)vm[r.key]=r.verdict;lss("opreg_verdicts",vm);
+  renderDashboard();toast("Audit complete: "+counts.REJECTED+" rejected, "+counts.CONDITIONAL_SURVIVOR+" conditional, "+counts.UNCERTIFIED_INDETERMINATE+" indeterminate");
+}
+function renderCandidates(){
+  const f=document.getElementById("filter-verdict").value;
+  const vm=verdictMap();
+  const list=allCandidates().map(c=>({c,v:vm[c.candidate_key||c.id]}))
+    .filter(x=>!f||x.v===f||(f==="— not yet audited"&&!x.v));
+  document.getElementById("cand-list").innerHTML=list.length?list.map(({c,v})=>
+    `<div class="cand" onclick="openDetail('${esc(c.candidate_key||c.id)}')">
+      <div class="name">${esc(c.name)} <span style="font-weight:400;font-size:12px;color:var(--muted)">(${esc(c.candidate_key||c.id)})</span></div>
+      <div>${v?`<span class="badge b-${v}">${v}</span>`:'<span style="font-size:12px;color:var(--muted)">not yet audited</span>'}
+      <span style="font-size:12px;color:var(--muted)"> · ${esc(c.arithmetic_specificity)}</span></div>
+    </div>`).join(""):'<p style="color:var(--muted);font-size:14px">No candidates match.</p>';
+}
+function openDetail(key){
+  const c=allCandidates().find(x=>(x.candidate_key||x.id)===key);if(!c)return;
+  const v=latestVerdict(c);const res=ls("opreg_last_results",null);
+  const rr=res?res.results.find(r=>r.key===key):null;
+  const k=c.candidate_key||c.id;
+  const props=PROP_FIELDS.map(f=>{const st=c[f+"_status"],cert=c[f+"_certification"];
+    const cond=(f==="positivity")?c.conditional_on_positivity:c.conditional_on;
+    return`<tr><td>${f.replace(/_/g," ")}</td><td><b>${esc(st)}</b></td><td><span class="badge b-cert">${esc(cert)}</span></td><td style="font-size:12px;color:var(--muted)">${st==="conditional"?esc((cond||[]).join("; ")):""}</td><td><button class="btn sec" style="padding:2px 8px;font-size:11px" onclick="copyText('${f}_status: ${esc(st)} (${esc(cert)})')">⧉</button></td></tr>`}).join("");
+  const ev=(c.evidence_files||[]).map(e=>`<div class="ev">${String(e.path||"").startsWith("http")?`<a href="${esc(e.path)}" target="_blank" rel="noopener">${esc(e.path.split("/").pop())}</a>`:`<b>${esc(e.path)}</b> <span class="miss">— MISSING (unrecovered)</span>`} <span class="badge b-cert">${esc(e.type||e.file_type||"")}</span> <span class="badge b-cert">${esc(e.certification||"")}</span>${e.reproducible?" · reproducible":""}${e.command?`<br><span style="font-size:12px;color:var(--muted)">${esc(e.command)}</span>`:""}</div>`).join("");
+  const log=(c.status_log||[]).slice().reverse().map(l=>`<div class="log-entry"><span class="t">${esc(l.timestamp)}</span> — <b>${esc(l.field)}</b>: ${esc(l.old)} → ${esc(l.new)}<br>${esc(l.reason)}${l.evidence_ref?` <span class="t">(ref: ${esc(l.evidence_ref)})</span>`:""}</div>`).join("");
+  const comments=ls("opreg_comments",{})[k]||[];
+  document.getElementById("view-detail").innerHTML=`
+    <button class="back" onclick="showTab('cand')">← Back to candidates</button>
+    <div class="card"><h2>${esc(c.name)}</h2>
+      <div class="kv"><b>key:</b> ${esc(k)}</div>
+      <div class="kv"><b>definition:</b> ${esc(c.definition_source)}</div>
+      <div class="kv"><b>arithmetic specificity:</b> ${esc(c.arithmetic_specificity)}</div>
+      <div class="kv"><b>verdict:</b> ${v?`<span class="badge b-${v}">${v}</span>`:"not yet audited"}</div>
+      ${rr?`<ul class="reasons">${rr.reasons.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
+      <div class="row-actions" style="margin-top:12px">
+        <button class="btn sec" onclick="downloadCandidate('${esc(k)}')">⬇ Download this candidate (JSON)</button>
+        <button class="btn sec" onclick="copyCandidate('${esc(k)}')">⧉ Copy JSON</button>
+      </div>
+    </div>
+    <div class="card"><h2>Properties</h2>
+      <div style="overflow-x:auto"><table><thead><tr><th>Property</th><th>Status</th><th>Certification</th><th>Conditional on</th><th></th></tr></thead><tbody>${props}</tbody></table></div>
+    </div>
+    <div class="card"><h2>Circularity check</h2>
+      <div class="kv"><b>attestation:</b> ${esc(c.circularity_attestation)}</div>
+      <div class="kv"><b>flags:</b> zero_data=${c.uses_zero_data}, target_wronskian=${c.uses_target_wronskian}, spectral_fitting=${c.uses_spectral_fitting}, post_hoc=${c.uses_post_hoc_target_definition}</div>
+    </div>
+    ${ev?`<div class="card"><h2>Evidence files</h2>${ev}</div>`:""}
+    ${c.rejection_reasons&&c.rejection_reasons.length?`<div class="card"><h2>Rejection reasons (recorded)</h2><ul class="reasons">${c.rejection_reasons.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
+    ${log?`<div class="card"><h2>Status log (append-only)</h2>${log}</div>`:""}
+    <div class="card"><h2>Comments</h2>
+      <div id="cmts">${comments.map(m=>`<div class="comment"><div class="who">${esc(m.author)}</div><div class="when">${new Date(m.at).toLocaleString()}</div>${esc(m.body)}</div>`).join("")||'<p style="color:var(--muted);font-size:14px">No comments yet.</p>'}</div>
+      <input type="text" id="cmt-who" placeholder="Your name">
+      <textarea id="cmt-body" rows="2" placeholder="Add a comment (saved in this browser)"></textarea>
+      <button class="btn sec" onclick="addComment('${esc(k)}')">Post comment</button>
+    </div>`;
+  showTab("detail");
+}
+function addComment(k){
+  const who=document.getElementById("cmt-who").value.trim()||"anonymous";
+  const body=document.getElementById("cmt-body").value.trim();
+  if(!body){toast("Write a comment first");return;}
+  const all=ls("opreg_comments",{});(all[k]=all[k]||[]).unshift({author:who,body,at:new Date().toISOString()});
+  lss("opreg_comments",all);openDetail(k);toast("Comment saved");
+}
+function renderRuns(){
+  const hist=ls("opreg_hist",[]);
+  document.getElementById("run-hist").innerHTML=hist.length?hist.map(h=>
+    `<div class="log-entry"><b>${new Date(h.run_at).toLocaleString()}</b> — ${h.total} candidates ·
+     <span class="badge b-REJECTED">${h.counts.REJECTED||0} rejected</span>
+     <span class="badge b-CONDITIONAL_SURVIVOR">${h.counts.CONDITIONAL_SURVIVOR||0} conditional</span>
+     <span class="badge b-UNCERTIFIED_INDETERMINATE">${h.counts.UNCERTIFIED_INDETERMINATE||0} indeterminate</span>
+     <span class="badge b-UNCONDITIONAL_SURVIVOR">${h.counts.UNCONDITIONAL_SURVIVOR||0} survivor</span>
+     <span class="badge b-SCHEMA_VIOLATION">${h.counts.SCHEMA_VIOLATION||0} violation</span></div>`).join("")
+    :'No runs yet in this browser. Press "Run Audit" on the Dashboard.';
+  const added=ls("opreg_added",[]);const cm=ls("opreg_comments",{});
+  const nComments=Object.values(cm).reduce((a,b)=>a+b.length,0);
+  document.getElementById("saved-summary").innerHTML=
+    `<div class="kv">${allCandidates().length} candidates saved (${REGISTRY.candidates.length} built-in, ${added.length} added in this browser)</div>
+     <div class="kv">${nComments} comments saved locally</div>
+     <div class="kv">${hist.length} audit runs recorded</div>
+     <p style="font-size:12px;color:var(--muted);margin-top:8px">Built-in candidates travel with this file. Comments, added candidates and run history stay in this browser only — use "Download registry" to export everything.</p>`;
+}
+/* export / copy */
+function registrySnapshot(){return{exported_at:new Date().toISOString(),schema_version:REGISTRY.schema_version||2,candidates:allCandidates(),last_audit:ls("opreg_last_results",null),comments:ls("opreg_comments",{})}}
+function download(name,text){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"application/json"}));a.download=name;a.click()}
+function downloadRegistry(){download("operator_registry_export_"+new Date().toISOString().slice(0,10)+".json",JSON.stringify(registrySnapshot(),null,2));toast("Registry downloaded")}
+function downloadCandidate(k){const c=allCandidates().find(x=>(x.candidate_key||x.id)===k);download("candidate_"+k+".json",JSON.stringify(c,null,2));toast("Candidate downloaded")}
+function copyText(t){navigator.clipboard.writeText(t).then(()=>toast("Copied")).catch(()=>toast("Copy failed"))}
+function copyCandidate(k){const c=allCandidates().find(x=>(x.candidate_key||x.id)===k);copyText(JSON.stringify(c,null,2))}
+function copySummary(){const r=ls("opreg_last_results",null);
+  if(!r){toast("Run the audit first");return;}
+  let t="Operator Registry audit summary — "+new Date(r.run_at).toLocaleString()+"\n"+r.results.map(x=>x.name+": "+x.verdict+(x.reasons.length?" — "+x.reasons[0]:"")).join("\n");
+  copyText(t)}
+/* add candidate */
+const STATUS_OPTS=["not_tested","numerical","numerical_positive","numerical_negative","conditional","proved","failed","indefinite"];
+function buildPropForm(){document.getElementById("prop-form").innerHTML=PROP_FIELDS.map(f=>
+  `<div class="form-grid"><div><label>${f.replace(/_/g," ")} status</label><select id="p-${f}-s">${STATUS_OPTS.map(s=>`<option ${s==="not_tested"?"selected":""}>${s}</option>`).join("")}</select></div>
+  <div><label>certification</label><select id="p-${f}-c">${CERT_LEVELS.map(c=>`<option ${c==="none"?"selected":""}>${c}</option>`).join("")}</select></div></div>`).join("")}
+function importJSON(){
+  try{const c=JSON.parse(document.getElementById("paste-json").value);
+    document.getElementById("f-key").value=c.candidate_key||c.id||"";
+    document.getElementById("f-name").value=c.name||"";
+    document.getElementById("f-def").value=c.definition_source||"";
+    document.getElementById("f-attest").value=c.circularity_attestation||"";
+    document.getElementById("f-spec").value=c.arithmetic_specificity||"generic";
+    document.getElementById("f-zero").checked=!!c.uses_zero_data;
+    document.getElementById("f-wron").checked=!!c.uses_target_wronskian;
+    document.getElementById("f-fit").checked=!!c.uses_spectral_fitting;
+    document.getElementById("f-posthoc").checked=!!c.uses_post_hoc_target_definition;
+    for(const f of PROP_FIELDS){const s=document.getElementById("p-"+f+"-s"),cc=document.getElementById("p-"+f+"-c");
+      if(c[f+"_status"])s.value=c[f+"_status"];if(c[f+"_certification"]&&(c[f+"_certification"]==="none"||CERT_LEVELS.includes(c[f+"_certification"])))cc.value=c[f+"_certification"];}
+    document.getElementById("f-cond").value=((c.conditional_on||[]).join("; "))||"";
+    toast("Imported into form — review and press Save");
+  }catch(e){toast("Invalid JSON: "+e.message)}
+}
+function saveCandidate(){
+  const key=document.getElementById("f-key").value.trim();
+  if(!key||!document.getElementById("f-name").value.trim()){toast("Key and name are required");return;}
+  const att=document.getElementById("f-attest").value.trim();
+  if(!att){toast("Circularity attestation is required (schema §7)");return;}
+  const c={candidate_key:key,name:document.getElementById("f-name").value.trim(),
+    definition_source:document.getElementById("f-def").value.trim(),circularity_attestation:att,
+    uses_zero_data:document.getElementById("f-zero").checked,uses_target_wronskian:document.getElementById("f-wron").checked,
+    uses_spectral_fitting:document.getElementById("f-fit").checked,uses_post_hoc_target_definition:document.getElementById("f-posthoc").checked,
+    arithmetic_specificity:document.getElementById("f-spec").value,
+    conditional_on:document.getElementById("f-cond").value.trim()?[document.getElementById("f-cond").value.trim()]:[],
+    conditional_on_positivity:document.getElementById("f-cond").value.trim()?[document.getElementById("f-cond").value.trim()]:[],
+    evidence_files:[],rejection_reasons:[],open_requirements:[],
+    status_log:[{timestamp:new Date().toISOString(),field:"all",old:"n/a",new:"as entered",reason:"Candidate added in standalone registry",evidence_ref:"manual entry"}]};
+  for(const f of PROP_FIELDS){c[f+"_status"]=document.getElementById("p-"+f+"-s").value;c[f+"_certification"]=document.getElementById("p-"+f+"-c").value;}
+  const added=ls("opreg_added",[]);
+  if(added.some(x=>x.candidate_key===key)||REGISTRY.candidates.some(x=>x.candidate_key===key)){toast("A candidate with this key already exists");return;}
+  added.push(c);lss("opreg_added",added);
+  document.getElementById("add-msg").textContent="Saved. Run the audit to classify it.";
+  toast("Candidate saved");
+}
+/* tutorial */
+function openTutorial(){document.getElementById("modal-tut").classList.remove("hidden")}
+function closeTutorial(){document.getElementById("modal-tut").classList.add("hidden");lss("opreg_tut_done",true)}
+/* init */
+buildPropForm();
+if(!ls("opreg_tut_done",false))openTutorial();
+renderDashboard();
+</script>
+
+<script>
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})};
+</script>
+</body>
+</html>
