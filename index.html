@@ -80,6 +80,7 @@ label{font-size:13px;color:var(--muted)}
 <body>
 <div class="top">
   <h1>Operator Registry</h1>
+  <button class="btn-help" onclick="shareApp()">↗ Share app</button>
   <button class="btn-help" onclick="openTutorial()">? Tutorial</button>
 </div>
 <nav class="tabs">
@@ -97,6 +98,7 @@ label{font-size:13px;color:var(--muted)}
     <button class="btn" onclick="runAudit()">▶ Run Audit</button>
     <button class="btn sec" onclick="downloadRegistry()">⬇ Download registry (JSON)</button>
     <button class="btn sec" onclick="copySummary()">⧉ Copy summary</button>
+    <button class="btn sec" onclick="shareSummary()">↗ Share summary</button>
   </div>
   <div class="card">
     <h2 id="dash-title">Audit results</h2>
@@ -914,6 +916,7 @@ function openDetail(key){
       <div class="row-actions" style="margin-top:12px">
         <button class="btn sec" onclick="downloadCandidate('${esc(k)}')">⬇ Download this candidate (JSON)</button>
         <button class="btn sec" onclick="copyCandidate('${esc(k)}')">⧉ Copy JSON</button>
+        <button class="btn sec" onclick="shareCandidate('${esc(k)}')">↗ Share</button>
       </div>
     </div>
     <div class="card"><h2>Properties</h2>
@@ -927,7 +930,7 @@ function openDetail(key){
     ${c.rejection_reasons&&c.rejection_reasons.length?`<div class="card"><h2>Rejection reasons (recorded)</h2><ul class="reasons">${c.rejection_reasons.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
     ${log?`<div class="card"><h2>Status log (append-only)</h2>${log}</div>`:""}
     <div class="card"><h2>Comments</h2>
-      <div id="cmts">${comments.map(m=>`<div class="comment"><div class="who">${esc(m.author)}</div><div class="when">${new Date(m.at).toLocaleString()}</div>${esc(m.body)}</div>`).join("")||'<p style="color:var(--muted);font-size:14px">No comments yet.</p>'}</div>
+      <div id="cmts">${comments.map((m,i)=>`<div class="comment"><div class="who">${esc(m.author)} <button class="btn sec" style="padding:1px 8px;font-size:10px;float:right" onclick="shareNote('${esc(k)}',${i})">↗ share note</button></div><div class="when">${new Date(m.at).toLocaleString()}</div>${esc(m.body)}</div>`).join("")||'<p style="color:var(--muted);font-size:14px">No comments yet.</p>'}</div>
       <input type="text" id="cmt-who" placeholder="Your name">
       <textarea id="cmt-body" rows="2" placeholder="Add a comment (saved in this browser)"></textarea>
       <button class="btn sec" onclick="addComment('${esc(k)}')">Post comment</button>
@@ -964,6 +967,19 @@ function registrySnapshot(){return{exported_at:new Date().toISOString(),schema_v
 function download(name,text){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"application/json"}));a.download=name;a.click()}
 function downloadRegistry(){download("operator_registry_export_"+new Date().toISOString().slice(0,10)+".json",JSON.stringify(registrySnapshot(),null,2));toast("Registry downloaded")}
 function downloadCandidate(k){const c=allCandidates().find(x=>(x.candidate_key||x.id)===k);download("candidate_"+k+".json",JSON.stringify(c,null,2));toast("Candidate downloaded")}
+function shareData(t){if(navigator.share){navigator.share(t).then(()=>toast("Shared")).catch(()=>{})}else{copyText((t.text?t.text+(t.url?"\n\n":""):"")+(t.url||""));toast("Copied to clipboard")}}
+function shareApp(){shareData({title:"Operator Registry",text:"Hilbert-Polya operator falsification registry - audit candidate operators against fixed rejection rules. Installable, works offline:",url:location.href})}
+function shareSummary(){const r=ls("opreg_last_results",null);
+  if(!r){toast("Run the audit first");return;}
+  let t="Operator Registry audit summary - "+new Date(r.run_at).toLocaleString()+"\n"+r.results.map(x=>x.name+": "+x.verdict+(x.reasons.length?" - "+x.reasons[0]:"")).join("\n");
+  shareData({title:"Audit summary",text:t+"\n\nShared from the Operator Registry",url:location.href})}
+function shareCandidate(k){const c=allCandidates().find(x=>(x.candidate_key||x.id)===k);if(!c)return;
+  const v=latestVerdict(c);const r=ls("opreg_last_results",null);const rr=r?r.results.find(x=>x.key===k):null;
+  let t=c.name+"\nDefinition: "+c.definition_source+"\nVerdict: "+(v||"not yet audited")+(rr?"\nReason: "+rr.reasons[0]:"")+"\n\nShared from the Operator Registry";
+  shareData({title:c.name,text:t,url:location.href})}
+function shareNote(k,i){const list=ls("opreg_comments",{})[k]||[];const m=list[i];if(!m)return;
+  const t="Note by "+m.author+" ("+new Date(m.at).toLocaleString()+") on candidate "+k+":\n"+m.body+"\n\nShared from the Operator Registry: "+location.href;
+  shareData({title:"Operator Registry note",text:t})}
 function copyText(t){navigator.clipboard.writeText(t).then(()=>toast("Copied")).catch(()=>toast("Copy failed"))}
 function copyCandidate(k){const c=allCandidates().find(x=>(x.candidate_key||x.id)===k);copyText(JSON.stringify(c,null,2))}
 function copySummary(){const r=ls("opreg_last_results",null);
