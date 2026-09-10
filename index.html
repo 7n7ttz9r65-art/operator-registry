@@ -1082,6 +1082,7 @@ function openTutorial(){document.getElementById("modal-tut").classList.remove("h
 function closeTutorial(){document.getElementById("modal-tut").classList.add("hidden");lss("opreg_tut_done",true)}
 /* init */
 buildPropForm();
+if(!ls("opreg_last_results",null)){const vm={};for(const c of allCandidates())vm[c.candidate_key||c.id]=classify(c).verdict;lss("opreg_verdicts",vm);}
 if(!ls("opreg_tut_done",false))openTutorial();
 renderDashboard();
 </script>
