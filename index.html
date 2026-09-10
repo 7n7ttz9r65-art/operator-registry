@@ -86,6 +86,7 @@ label{font-size:13px;color:var(--muted)}
 <nav class="tabs">
   <button id="tab-dash" class="active" onclick="showTab('dash')">Dashboard</button>
   <button id="tab-cand" onclick="showTab('cand')">Candidates</button>
+  <button id="tab-compare" onclick="showTab('compare')">Compare</button>
   <button id="tab-add" onclick="showTab('add')">Add Candidate</button>
   <button id="tab-runs" onclick="showTab('runs')">Runs &amp; Saved</button>
   <button id="tab-help" onclick="showTab('help')">Help</button>
@@ -99,6 +100,7 @@ label{font-size:13px;color:var(--muted)}
   <div class="row-actions">
     <button class="btn" onclick="runAudit()">▶ Run Audit</button>
     <button class="btn sec" onclick="downloadRegistry()">⬇ Download registry (JSON)</button>
+    <button class="btn sec" onclick="downloadCSV()">⬇ Download CSV</button>
     <button class="btn sec" onclick="copySummary()">⧉ Copy summary</button>
     <button class="btn sec" onclick="shareSummary()">↗ Share summary</button>
   </div>
@@ -168,6 +170,19 @@ label{font-size:13px;color:var(--muted)}
   </div>
 </div>
 
+<!-- COMPARE VIEW -->
+<div id="view-compare" class="hidden">
+  <div class="card">
+    <h2>Compare candidates</h2>
+    <p style="font-size:13px;color:var(--muted)">Line up two candidates side by side — handy when deciding which indeterminate one deserves the next interval-arithmetic run.</p>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+      <select id="cmp-a" onchange="renderCompare()" style="max-width:280px"></select>
+      <span style="font-weight:700">vs</span>
+      <select id="cmp-b" onchange="renderCompare()" style="max-width:280px"></select>
+    </div>
+    <div style="overflow-x:auto" id="cmp-out"></div>
+  </div>
+</div>
 <!-- HELP / GLOSSARY -->
 <div id="view-help" class="hidden">
   <div class="card">
@@ -874,10 +889,11 @@ function esc(s){return String(s??"").replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&l
 /* ================= UI ================= */
 let currentView="dash";
 function showTab(v){currentView=v;
-  for(const t of ["dash","cand","add","runs","detail","help"])document.getElementById("view-"+t).classList.add("hidden");
+  for(const t of ["dash","cand","add","runs","detail","help","compare"])document.getElementById("view-"+t).classList.add("hidden");
   document.getElementById("view-"+v).classList.remove("hidden");
-  for(const t of ["dash","cand","add","runs","help"])document.getElementById("tab-"+t).classList.toggle("active",t===v);
+  for(const t of ["dash","cand","add","runs","help","compare"])document.getElementById("tab-"+t).classList.toggle("active",t===v);
   if(v==="cand")renderCandidates();
+  if(v==="compare")renderCompare();
   if(v==="runs")renderRuns();
   if(v==="dash")renderDashboard();
   window.scrollTo(0,0);
@@ -997,6 +1013,40 @@ function renderRuns(){
 /* export / copy */
 function registrySnapshot(){return{exported_at:new Date().toISOString(),schema_version:REGISTRY.schema_version||2,candidates:allCandidates(),last_audit:ls("opreg_last_results",null),comments:ls("opreg_comments",{})}}
 function download(name,text){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"application/json"}));a.download=name;a.click()}
+function propCell(c,f){const st=c[f+"_status"]||"not_tested";const cert=c[f+"_certification"]||"none";
+  const cond=(f==="positivity")?c.conditional_on_positivity:c.conditional_on;
+  return `<b>${esc(st)}</b> <span class="badge b-cert">${esc(cert)}</span>`+(st==="conditional"&&cond&&cond.length?`<br><span style="font-size:11px;color:var(--muted)">if: ${esc(cond.join("; "))}</span>`:"")}
+function renderCompare(){
+  const sa=document.getElementById("cmp-a"),sb=document.getElementById("cmp-b");
+  const cs=allCandidates();
+  if(cs.length<2){document.getElementById("cmp-out").innerHTML="<p>Need at least two candidates to compare.</p>";return}
+  if(!sa.options.length){const o=cs.map(c=>`<option value="${esc(c.candidate_key||c.id)}">${esc(c.name)}</option>`).join("");sa.innerHTML=o;sb.innerHTML=o;sb.selectedIndex=Math.min(1,cs.length-1)}
+  const A=cs.find(x=>(x.candidate_key||x.id)===sa.value),B=cs.find(x=>(x.candidate_key||x.id)===sb.value);
+  if(!A||!B||A===B){document.getElementById("cmp-out").innerHTML=A===B?"<p>Pick two different candidates.</p>":"";if(A===B)return}
+  const vm=verdictMap();const res=ls("opreg_last_results",null);
+  const rs=k=>res?res.results.find(x=>x.key===k):null;
+  const RA=rs(A.candidate_key||A.id),RB=rs(B.candidate_key||B.id);
+  const row=(l,a,b)=>`<tr><td style="white-space:nowrap;font-weight:600">${l}</td><td>${a}</td><td>${b}</td></tr>`;
+  let rows="";
+  rows+=row("Definition",esc(A.definition_source||"—"),esc(B.definition_source||"—"));
+  rows+=row("Verdict",vm[A.candidate_key||A.id]?`<span class="badge b-${vm[A.candidate_key||A.id]}">${vm[A.candidate_key||A.id]}</span>`:"—",vm[B.candidate_key||B.id]?`<span class="badge b-${vm[B.candidate_key||B.id]}">${vm[B.candidate_key||B.id]}</span>`:"—");
+  rows+=row("Why",(RA&&RA.reasons.length?esc(RA.reasons.join("; ")):"—"),(RB&&RB.reasons.length?esc(RB.reasons.join("; ")):"—"));
+  for(const f of PROP_FIELDS)rows+=row(f.replace(/_/g," "),propCell(A,f),propCell(B,f));
+  document.getElementById("cmp-out").innerHTML=`<table><thead><tr><th></th><th>${esc(A.name)}</th><th>${esc(B.name)}</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+function csvEsc(v){v=(v==null?"":String(v));return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+function downloadCSV(){
+  const vm=verdictMap();const res=ls("opreg_last_results",null);
+  const rs=k=>res?res.results.find(x=>x.key===k):null;
+  const head=["candidate_key","name","verdict","reason","definition_source"].concat(PROP_FIELDS.flatMap(f=>[f+"_status",f+"_certification"]));
+  const lines=[head.join(",")];
+  for(const c of allCandidates()){const k=c.candidate_key||c.id;const r=rs(k);
+    lines.push([k,c.name,vm[k]||"",r&&r.reasons.length?r.reasons.join("; "):"",c.definition_source]
+      .concat(PROP_FIELDS.flatMap(f=>[c[f+"_status"]||"not_tested",c[f+"_certification"]||"none"]))
+      .map(csvEsc).join(","));}
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+lines.join("\n")],{type:"text/csv"}));a.download="operator_registry_"+new Date().toISOString().slice(0,10)+".csv";a.click();
+  toast("CSV downloaded");
+}
 function downloadRegistry(){download("operator_registry_export_"+new Date().toISOString().slice(0,10)+".json",JSON.stringify(registrySnapshot(),null,2));toast("Registry downloaded")}
 function downloadCandidate(k){const c=allCandidates().find(x=>(x.candidate_key||x.id)===k);download("candidate_"+k+".json",JSON.stringify(c,null,2));toast("Candidate downloaded")}
 function shareData(t){if(navigator.share){navigator.share(t).then(()=>toast("Shared")).catch(()=>{})}else{copyText((t.text?t.text+(t.url?"\n\n":""):"")+(t.url||""));toast("Copied to clipboard")}}
