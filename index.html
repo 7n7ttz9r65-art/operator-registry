@@ -88,12 +88,14 @@ label{font-size:13px;color:var(--muted)}
   <button id="tab-cand" onclick="showTab('cand')">Candidates</button>
   <button id="tab-add" onclick="showTab('add')">Add Candidate</button>
   <button id="tab-runs" onclick="showTab('runs')">Runs &amp; Saved</button>
+  <button id="tab-help" onclick="showTab('help')">Help</button>
 </nav>
 <div class="wrap">
 
 <!-- DASHBOARD -->
 <div id="view-dash">
   <div class="tiles" id="tiles"></div>
+  <div id="plain-sum" style="font-size:14px;color:var(--muted);margin:0 0 16px 0"></div>
   <div class="row-actions">
     <button class="btn" onclick="runAudit()">▶ Run Audit</button>
     <button class="btn sec" onclick="downloadRegistry()">⬇ Download registry (JSON)</button>
@@ -110,6 +112,7 @@ label{font-size:13px;color:var(--muted)}
 <div id="view-cand" class="hidden">
   <div class="card">
     <h2>Candidates</h2>
+    <input type="text" id="search-box" placeholder="Search by name, key, or definition…" oninput="renderCandidates()" style="margin-bottom:8px">
     <select id="filter-verdict" onchange="renderCandidates()" style="max-width:280px">
       <option value="">All verdicts</option>
       <option>REJECTED</option><option>CONDITIONAL_SURVIVOR</option>
@@ -165,18 +168,44 @@ label{font-size:13px;color:var(--muted)}
   </div>
 </div>
 
+<!-- HELP / GLOSSARY -->
+<div id="view-help" class="hidden">
+  <div class="card">
+    <h2>Glossary — what the words mean</h2>
+    <h3>The verdicts</h3>
+    <div class="helpdt"><b>REJECTED</b> — a fixed rejection rule fired: this construction is a proven no-go.</div>
+    <div class="helpdt"><b>CONDITIONAL_SURVIVOR</b> — the construction works if its named (still unproved) assumptions turn out to be true.</div>
+    <div class="helpdt"><b>UNCERTIFIED_INDETERMINATE</b> — not enough certified evidence to say either way yet. Often this means negative results from ordinary floating-point computation, which can never be trusted as proof.</div>
+    <div class="helpdt"><b>UNCONDITIONAL_SURVIVOR</b> — every required property proved with valid certification. None exist yet.</div>
+    <div class="helpdt"><b>SCHEMA_VIOLATION</b> — the record itself is malformed, so it cannot be judged at all.</div>
+    <h3>Certification levels — how much to trust a status</h3>
+    <div class="helpdt"><b>none</b> — no evidence yet.</div>
+    <div class="helpdt"><b>floating_point</b> — ordinary computer arithmetic. Suggestive, but rounding error means it can never count as proof.</div>
+    <div class="helpdt"><b>interval_arithmetic</b> — rigorous computation: every step carries certified error bounds.</div>
+    <div class="helpdt"><b>analytic_proof</b> — established by mathematical derivation, no computation required.</div>
+    <h3>The 7 properties, in plain English</h3>
+    <div class="helpdt"><b>trace</b> — does the operator's diagonal sum reproduce the prime arithmetic exactly?</div>
+    <div class="helpdt"><b>positivity</b> — are all its energies non-negative, as a valid quantum Hamiltonian must be?</div>
+    <div class="helpdt"><b>covariance</b> — is its transformation behavior consistent with the arithmetic it has to reproduce?</div>
+    <div class="helpdt"><b>self_adjoint</b> — is it equal to its own adjoint, the requirement for real measurement outcomes?</div>
+    <div class="helpdt"><b>compact_resolvent</b> — does it have the right kind of discrete spectrum?</div>
+    <div class="helpdt"><b>weyl</b> — do its eigenvalues follow the right growth law?</div>
+    <div class="helpdt"><b>determinant</b> — does its determinant encode the target zeros?</div>
+    <p style="font-size:13px;color:var(--muted);margin-top:14px">Why certification matters: a "proved" claim backed only by floating-point numbers is exactly the error this registry exists to catch. The engine will refuse it.</p>
+  </div>
+</div>
 </div><!-- /wrap -->
 
 <!-- TUTORIAL MODAL -->
 <div class="modal-bg hidden" id="modal-tut" onclick="if(event.target===this)closeTutorial()">
   <div class="modal">
-    <h2>Welcome — 2-minute tutorial</h2>
-    <div class="step"><b>1. What this is.</b> A falsification registry for proposed Hilbert-Pólya operator candidates — mathematical constructions tested against fixed rules. Each candidate either passes, survives conditionally, or gets a no-go (REJECTED).</div>
-    <div class="step"><b>2. Reading a candidate.</b> Every candidate is scored on 7 properties (trace, positivity, covariance, self-adjoint, compact resolvent, Weyl law, determinant). Each status is paired with a <i>certification level</i>: floating-point evidence is suggestive only; "proved"/"failed" require interval arithmetic or analytic proof.</div>
-    <div class="step"><b>3. Verdicts.</b> REJECTED = a rule fired (no-go). CONDITIONAL_SURVIVOR = survives if named premises are proven. UNCERTIFIED_INDETERMINATE = not enough certified evidence to judge (e.g. floating-point-only negative). SCHEMA_VIOLATION = malformed record.</div>
-    <div class="step"><b>4. Run the audit.</b> Dashboard → "Run Audit" runs every candidate through the rule engine and shows the verdict table. History is kept under "Runs &amp; Saved".</div>
-    <div class="step"><b>5. Share &amp; export.</b> "Download registry (JSON)" exports everything; "Copy summary" copies a plain-text report. You can also add candidates and paste JSON imports.</div>
-    <button class="btn" onclick="closeTutorial()">Got it</button>
+    <div id="tut-body"></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:16px">
+      <button class="btn sec" id="tut-back" onclick="tutStep(TUT-1)">Back</button>
+      <button class="btn" id="tut-next" onclick="tutStep(TUT+1)">Next</button>
+      <button class="btn sec" id="tut-skip" style="margin-left:auto;border:none;background:none;text-decoration:underline;color:var(--muted)" onclick="closeTutorial()">Skip</button>
+    </div>
+    <div id="tut-dots" style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted)"></div>
   </div>
 </div>
 <div id="toast" class="toast hidden"></div>
@@ -845,9 +874,9 @@ function esc(s){return String(s??"").replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&l
 /* ================= UI ================= */
 let currentView="dash";
 function showTab(v){currentView=v;
-  for(const t of ["dash","cand","add","runs","detail"])document.getElementById("view-"+t).classList.add("hidden");
+  for(const t of ["dash","cand","add","runs","detail","help"])document.getElementById("view-"+t).classList.add("hidden");
   document.getElementById("view-"+v).classList.remove("hidden");
-  for(const t of ["dash","cand","add","runs"])document.getElementById("tab-"+t).classList.toggle("active",t===v);
+  for(const t of ["dash","cand","add","runs","help"])document.getElementById("tab-"+t).classList.toggle("active",t===v);
   if(v==="cand")renderCandidates();
   if(v==="runs")renderRuns();
   if(v==="dash")renderDashboard();
@@ -864,6 +893,8 @@ function renderDashboard(){
   document.getElementById("tiles").innerHTML=
     `<div class="tile"><div class="n">${cands.length}</div><div class="lbl">Candidates</div></div>`+
     VOTES.map(v=>`<div class="tile"><div class="n">${counts[v]}</div><div class="lbl">${v.replace(/_/g," ")}</div></div>`).join("");
+  const pl=(n,w)=>n+" "+w+(n===1?"":"s");
+  document.getElementById("plain-sum").textContent="So far: "+pl(counts.REJECTED,"candidate")+" "+(counts.REJECTED===1?"is a":"are")+" proven no-go"+(counts.REJECTED===1?"":"s")+", "+pl(counts.CONDITIONAL_SURVIVOR,"survive"+(counts.CONDITIONAL_SURVIVOR===1?"s":""))+" conditionally, "+pl(counts.UNCERTIFIED_INDETERMINATE,"await")+" certified evidence, and "+pl(counts.UNCONDITIONAL_SURVIVOR,"fully proved")+"."+(counts.SCHEMA_VIOLATION?" ("+pl(counts.SCHEMA_VIOLATION,"malformed record")+" blocked from judging.)":"");
   document.getElementById("dash-title").textContent=res?("Audit results — run "+new Date(res.run_at).toLocaleString()):"Audit results — not yet run";
   const tb=document.querySelector("#results-table tbody");
   if(!res){tb.innerHTML=`<tr><td colspan="3" style="color:var(--muted)">Press "Run Audit" to classify all candidates.</td></tr>`;return;}
@@ -884,9 +915,10 @@ function runAudit(){
 }
 function renderCandidates(){
   const f=document.getElementById("filter-verdict").value;
+  const q=(document.getElementById("search-box").value||"").toLowerCase();
   const vm=verdictMap();
   const list=allCandidates().map(c=>({c,v:vm[c.candidate_key||c.id]}))
-    .filter(x=>!f||x.v===f||(f==="— not yet audited"&&!x.v));
+    .filter(x=>(!f||x.v===f||(f==="— not yet audited"&&!x.v))&&(!q||((x.c.name||"")+" "+(x.c.candidate_key||x.c.id||"")+" "+(x.c.definition_source||"")).toLowerCase().includes(q)));
   document.getElementById("cand-list").innerHTML=list.length?list.map(({c,v})=>
     `<div class="cand" onclick="openDetail('${esc(c.candidate_key||c.id)}')">
       <div class="name">${esc(c.name)} <span style="font-weight:400;font-size:12px;color:var(--muted)">(${esc(c.candidate_key||c.id)})</span></div>
@@ -1030,7 +1062,23 @@ function saveCandidate(){
   toast("Candidate saved");
 }
 /* tutorial */
-function openTutorial(){document.getElementById("modal-tut").classList.remove("hidden")}
+const TUT_STEPS=[
+ {t:"Welcome — 2-minute tour",b:"This is a <b>falsification registry</b> for proposed Hilbert-Pólya operator candidates — mathematical constructions tested against the same fixed rules. Every candidate gets a verdict: a proven no-go, a conditional pass, or \"can't judge yet\"."},
+ {t:"How to read a candidate",b:"Each candidate is scored on <b>7 properties</b> (trace, positivity, covariance, self-adjointness, compact resolvent, Weyl law, determinant). Every status carries a <b>certification level</b>: floating-point numbers are only suggestive; \"proved\" or \"failed\" require interval arithmetic or an analytic proof."},
+ {t:"The verdicts",b:"<b>REJECTED</b> = a rule fired, it's a proven no-go. <b>CONDITIONAL_SURVIVOR</b> = survives if its stated assumptions are proven. <b>UNCERTIFIED_INDETERMINATE</b> = not enough certified evidence to judge. <b>UNCONDITIONAL_SURVIVOR</b> = all properties proved (none yet). <b>SCHEMA_VIOLATION</b> = malformed record. Full plain-English definitions live in the Help tab."},
+ {t:"Run the audit",b:"The <b>Run Audit</b> button re-checks every candidate through the rule engine. <b>Runs &amp; Saved</b> keeps the history of every run; <b>Download registry</b> exports everything as JSON."},
+ {t:"Make it yours",b:"Add candidates, leave comments on any candidate page, and use the <b>share buttons</b> to send the app, audit results, candidates, or notes to anyone. Install it on your phone's home screen from your browser menu — it works fully offline."}];
+let TUT=0;
+function tutStep(n){
+  if(n>=TUT_STEPS.length){closeTutorial();return}
+  if(n<0)n=0;TUT=n;
+  const s=TUT_STEPS[n];
+  document.getElementById("tut-body").innerHTML="<h2>"+s.t+"</h2><p style='font-size:14px'>"+s.b+"</p>";
+  document.getElementById("tut-back").style.visibility=n>0?"visible":"hidden";
+  document.getElementById("tut-next").textContent=n===TUT_STEPS.length-1?"Finish":"Next";
+  document.getElementById("tut-dots").innerHTML=(n+1)+" of "+TUT_STEPS.length+"&nbsp;&nbsp;"+TUT_STEPS.map((_,i)=>i===n?"●":"○").join(" ");
+}
+function openTutorial(){document.getElementById("modal-tut").classList.remove("hidden");tutStep(0)}
 function closeTutorial(){document.getElementById("modal-tut").classList.add("hidden");lss("opreg_tut_done",true)}
 /* init */
 buildPropForm();
