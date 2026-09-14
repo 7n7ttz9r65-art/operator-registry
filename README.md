@@ -47,6 +47,16 @@ Built-in **share buttons** use your phone's native share sheet (messages, email,
 - **↗ Share** (candidate page) — shares a candidate's definition, verdict, and reason.
 - **↗ share note** (each comment) — shares an individual note.
 
+## Run queue — what to run next
+
+The **Run Queue** tab ranks what to run next instead of guessing, computed live from the audit state:
+
+- Certifications that could **flip a verdict** rank first (e.g. "if the run fails Weyl, the candidate is REJECTED").
+- Cheap floating-point → interval-arithmetic upgrades rank next.
+- Add any suggestion to **your queue** (reorder it however you like with the arrows), or add custom experiment runs.
+- Finishing a run logs the result and can **apply the new property status directly** — the verdict recalculates on the spot.
+- Everything is tracked: queued → running → done/skipped, with a run log.
+
 ## Repository layout
 
 - `index.html` — the complete app (registry data, audit engine, UI).
