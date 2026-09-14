@@ -87,6 +87,7 @@ label{font-size:13px;color:var(--muted)}
   <button id="tab-dash" class="active" onclick="showTab('dash')">Dashboard</button>
   <button id="tab-cand" onclick="showTab('cand')">Candidates</button>
   <button id="tab-compare" onclick="showTab('compare')">Compare</button>
+  <button id="tab-queue" onclick="showTab('queue')">Run Queue</button>
   <button id="tab-add" onclick="showTab('add')">Add Candidate</button>
   <button id="tab-runs" onclick="showTab('runs')">Runs &amp; Saved</button>
   <button id="tab-help" onclick="showTab('help')">Help</button>
@@ -183,6 +184,28 @@ label{font-size:13px;color:var(--muted)}
     <div style="overflow-x:auto" id="cmp-out"></div>
   </div>
 </div>
+<!-- RUN QUEUE -->
+<div id="view-queue" class="hidden">
+  <div class="card">
+    <h2>Run queue — what to run next</h2>
+    <p style="font-size:13px;color:var(--muted)">Ranked automatically from the current audit state: certifications that could flip a verdict come first, cheap floating-point upgrades next. No guessing — each suggestion shows what happens under each outcome.</p>
+    <div id="sug-list"></div>
+  </div>
+  <div class="card">
+    <h3>My queue</h3>
+    <p style="font-size:13px;color:var(--muted)">Your tracked runs, in your order — reorder with the arrows.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <select id="nq-cand" style="max-width:280px;margin:4px 0 10px"></select>
+      <input type="text" id="nq-label" placeholder="Custom run description (e.g. new construction experiment)" style="max-width:320px">
+      <button class="btn sec" onclick="addCustomRun()">+ Add run</button>
+    </div>
+    <div id="queue-list"></div>
+  </div>
+  <div class="card">
+    <h3>Run log</h3>
+    <div id="run-log"></div>
+  </div>
+</div>
 <!-- HELP / GLOSSARY -->
 <div id="view-help" class="hidden">
   <div class="card">
@@ -221,6 +244,19 @@ label{font-size:13px;color:var(--muted)}
       <button class="btn sec" id="tut-skip" style="margin-left:auto;border:none;background:none;text-decoration:underline;color:var(--muted)" onclick="closeTutorial()">Skip</button>
     </div>
     <div id="tut-dots" style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted)"></div>
+  </div>
+</div>
+<!-- FINISH RUN MODAL -->
+<div class="modal-bg hidden" id="modal-queue" onclick="if(event.target===this)closeFinish(false)">
+  <div class="modal">
+    <h2>Finish run</h2>
+    <p id="fq-label" style="font-size:13px;color:var(--muted)"></p>
+    <textarea id="fq-note" placeholder="What did the run find?" style="width:100%;min-height:70px"></textarea>
+    <div id="fq-status"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn" onclick="closeFinish(true)">Save &amp; apply</button>
+      <button class="btn sec" onclick="closeFinish(false)">Log only</button>
+    </div>
   </div>
 </div>
 <div id="toast" class="toast hidden"></div>
@@ -881,7 +917,7 @@ function classify(c){
 /* ================= STATE ================= */
 function ls(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
 function lss(k,v){localStorage.setItem(k,JSON.stringify(v))}
-function allCandidates(){return REGISTRY.candidates.concat(ls("opreg_added",[]))}
+function allCandidates(){const ov=ls("opreg_overrides",{});return REGISTRY.candidates.concat(ls("opreg_added",[])).map(c=>{const o=ov[c.candidate_key||c.id];return o?{...c,...o}:c})}
 function verdictMap(){const m=ls("opreg_verdicts",{});return m}
 function latestVerdict(c){const m=verdictMap();return m[c.candidate_key||c.id]}
 function esc(s){return String(s??"").replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]))}
@@ -889,11 +925,12 @@ function esc(s){return String(s??"").replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&l
 /* ================= UI ================= */
 let currentView="dash";
 function showTab(v){currentView=v;
-  for(const t of ["dash","cand","add","runs","detail","help","compare"])document.getElementById("view-"+t).classList.add("hidden");
+  for(const t of ["dash","cand","add","runs","detail","help","compare","queue"])document.getElementById("view-"+t).classList.add("hidden");
   document.getElementById("view-"+v).classList.remove("hidden");
-  for(const t of ["dash","cand","add","runs","help","compare"])document.getElementById("tab-"+t).classList.toggle("active",t===v);
+  for(const t of ["dash","cand","add","runs","help","compare","queue"])document.getElementById("tab-"+t).classList.toggle("active",t===v);
   if(v==="cand")renderCandidates();
   if(v==="compare")renderCompare();
+  if(v==="queue")renderQueue();
   if(v==="runs")renderRuns();
   if(v==="dash")renderDashboard();
   window.scrollTo(0,0);
@@ -1013,6 +1050,104 @@ function renderRuns(){
 /* export / copy */
 function registrySnapshot(){return{exported_at:new Date().toISOString(),schema_version:REGISTRY.schema_version||2,candidates:allCandidates(),last_audit:ls("opreg_last_results",null),comments:ls("opreg_comments",{})}}
 function download(name,text){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"application/json"}));a.download=name;a.click()}
+/* ================= RUN QUEUE ================= */
+let LAST_SUGG=[];
+function simFlip(c,f,st,cert){const x={...c};x[f+"_status"]=st;x[f+"_certification"]=cert;return classify(x).verdict}
+function genSuggestions(){
+  const out=[];
+  for(const c of allCandidates()){
+    const k=c.candidate_key||c.id;const v=latestVerdict(c);
+    if(v==="REJECTED"||v==="SCHEMA_VIOLATION")continue;
+    for(const f of PROP_FIELDS){
+      const st=c[f+"_status"],cert=c[f+"_certification"]||"none";
+      if((st==="proved"||st==="failed")&&cert==="floating_point"){
+        const up=simFlip(c,f,st,"interval_arithmetic");
+        let score=30,rs=["status is "+st+" but only floating-point certified — one interval run makes it rigorous"];
+        if(up!==v){score+=40;rs.push("it flips the verdict: "+v+" → "+up)}
+        out.push({k,name:c.name,f,score,reasons:rs,action:"Interval-arithmetic run on "+f.replace(/_/g," ")+" (currently "+st+", floating-point only)"});
+      }
+      if(st==="not_tested"||(st==="numerical"&&cert==="none")){
+        const pf=simFlip(c,f,"proved","interval_arithmetic"),ff=simFlip(c,f,"failed","interval_arithmetic");
+        let score=20,rs=[st==="not_tested"?f.replace(/_/g," ")+" is not tested — a first certified run removes the uncertainty":"numerical evidence exists but is uncertified — certify it with interval arithmetic"];
+        if(ff==="REJECTED"){score+=40;rs.push("if the run fails "+f.replace(/_/g," ")+", the candidate is REJECTED")}
+        if(pf&&pf!==v&&pf!=="UNCERTIFIED_INDETERMINATE"){score+=25;rs.push("if it proves "+f.replace(/_/g," ")+", the verdict improves: "+pf)}
+        if(v==="CONDITIONAL_SURVIVOR"){score+=10;rs.push("conditional survivor — certified evidence here speaks directly to its premises")}
+        out.push({k,name:c.name,f,score,reasons:rs,action:(st==="not_tested"?"First certified run on ":"Certify existing numerical evidence for ")+f.replace(/_/g," ")});
+      }
+    }
+  }
+  return out.sort((a,b)=>b.score-a.score);
+}
+function renderQueue(){
+  const cs=allCandidates();
+  const sel=document.getElementById("nq-cand");
+  if(!sel.options.length)sel.innerHTML=cs.map(c=>`<option value="${esc(c.candidate_key||c.id)}">${esc(c.name)}</option>`).join("");
+  LAST_SUGG=genSuggestions();
+  document.getElementById("sug-list").innerHTML=LAST_SUGG.length?LAST_SUGG.map((s,i)=>`
+    <div style="border-top:1px solid var(--border);padding:10px 0">
+      <div><span class="badge b-UNCONDITIONAL_SURVIVOR">priority ${s.score}</span> <b>${esc(s.name)}</b> — ${esc(s.action)}</div>
+      <ul style="margin:6px 0 6px 18px;font-size:12px;color:var(--muted)">${s.reasons.map(r=>`<li>${esc(r)}</li>`).join("")}</ul>
+      <button class="btn sec" style="padding:4px 10px;font-size:12px" onclick="addFromSuggestion(${i})">+ Add to my queue</button>
+    </div>`).join(""):'<p style="color:var(--muted);font-size:13px">No suggestions — every surviving candidate is fully certified, or everything is rejected.</p>';
+  renderQList();
+}
+function addFromSuggestion(i){const s=LAST_SUGG[i];if(!s)return;addQ({k:s.k,label:s.name+" — "+s.action,target:s.f})}
+function addCustomRun(){const k=document.getElementById("nq-cand").value;const l=document.getElementById("nq-label").value.trim();if(!l){toast("Describe the run first");return}addQ({k,label:l,target:null});document.getElementById("nq-label").value=""}
+function addQ(o){const q=ls("opreg_queue",[]);q.push({id:Date.now()+"_"+Math.floor(Math.random()*999),k:o.k,label:o.label,target:o.target||null,status:"queued",created_at:new Date().toISOString(),started_at:null,finished_at:null,result:null});lss("opreg_queue",q);renderQueue();toast("Added to queue")}
+function renderQList(){
+  const q=ls("opreg_queue",[]);
+  const vm=verdictMap();
+  const act=q.filter(x=>x.status==="queued"||x.status==="running");
+  document.getElementById("queue-list").innerHTML=act.length?act.map((it,i)=>`
+    <div style="border-top:1px solid var(--border);padding:8px 0">
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <span class="badge ${it.status==="running"?"b-UNCONDITIONAL_SURVIVOR":"b-cert"}">${it.status}</span>
+        <b style="font-size:14px">${esc(it.label)}</b>
+        <span style="margin-left:auto;display:flex;gap:4px">
+          ${i>0?`<button class="btn sec" style="padding:2px 8px" onclick="moveQ(${i},-1)">↑</button>`:""}
+          ${i<act.length-1?`<button class="btn sec" style="padding:2px 8px" onclick="moveQ(${i},1)">↓</button>`:""}
+          ${it.status==="queued"?`<button class="btn" style="padding:2px 10px" onclick="startQ('${it.id}')">Start</button>`:""}
+          ${it.status==="running"?`<button class="btn" style="padding:2px 10px" onclick="openFinish('${it.id}')">Finish</button>`:""}
+          <button class="btn sec" style="padding:2px 8px" onclick="skipQ('${it.id}')">Skip</button>
+        </span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">candidate: ${esc(it.k)}${vm[it.k]?` · <span class="badge b-${vm[it.k]}">${vm[it.k]}</span>`:""}</div>
+    </div>`).join(""):'<p style="color:var(--muted);font-size:13px">Queue is empty — add a ranked suggestion above, or add a custom run.</p>';
+  const done=q.filter(x=>x.status==="done"||x.status==="skipped").sort((a,b)=>(b.finished_at||"").localeCompare(a.finished_at||""));
+  document.getElementById("run-log").innerHTML=done.length?done.map(it=>`
+    <div style="border-top:1px solid var(--border);padding:8px 0;font-size:13px">
+      <span class="badge ${it.status==="done"?"b-UNCONDITIONAL_SURVIVOR":"b-REJECTED"}">${it.status}</span> <b>${esc(it.label)}</b>
+      <div style="color:var(--muted);font-size:12px;margin-top:2px">${it.finished_at?new Date(it.finished_at).toLocaleString():""}${it.result?" — "+esc(it.result):""}</div>
+    </div>`).join(""):'<p style="color:var(--muted);font-size:13px">No completed runs yet.</p>';
+}
+function moveQ(i,d){const q=ls("opreg_queue",[]);const act=q.filter(x=>x.status==="queued"||x.status==="running");const a=act[i],b=act[i+d];if(!a||!b)return;const ia=q.indexOf(a),ib=q.indexOf(b);q[ia]=b;q[ib]=a;lss("opreg_queue",q);renderQueue()}
+function startQ(id){const q=ls("opreg_queue",[]);const it=q.find(x=>x.id===id);if(!it)return;it.status="running";it.started_at=new Date().toISOString();lss("opreg_queue",q);renderQueue();toast("Run started")}
+function skipQ(id){const q=ls("opreg_queue",[]);const it=q.find(x=>x.id===id);if(!it)return;it.status="skipped";it.finished_at=new Date().toISOString();lss("opreg_queue",q);renderQueue()}
+let FINISH_ID=null;
+function openFinish(id){const q=ls("opreg_queue",[]);const it=q.find(x=>x.id===id);if(!it)return;FINISH_ID=id;
+  document.getElementById("fq-label").textContent=it.label;
+  document.getElementById("fq-note").value="";
+  document.getElementById("fq-status").innerHTML=it.target?`
+    <label style="font-size:12px;color:var(--muted)">Apply result to ${esc(it.target.replace(/_/g," "))}:</label>
+    <div style="display:flex;gap:8px">
+      <select id="fq-st" style="margin-right:0"><option>proved</option><option>failed</option><option>numerical</option><option>not_tested</option><option>conditional</option></select>
+      <select id="fq-cert" style="margin-right:0"><option>interval_arithmetic</option><option>floating_point</option><option>analytic_proof</option><option>none</option></select>
+    </div>`:"";
+  document.getElementById("modal-queue").classList.remove("hidden")}
+function closeFinish(apply){
+  const q=ls("opreg_queue",[]);const it=q.find(x=>x.id===FINISH_ID);if(!it)return;
+  it.result=document.getElementById("fq-note").value.trim()||null;
+  it.status="done";it.finished_at=new Date().toISOString();
+  let applied=false;
+  if(apply&&it.target){
+    const st=document.getElementById("fq-st").value,cert=document.getElementById("fq-cert").value;
+    const ov=ls("opreg_overrides",{});const o=ov[it.k]||{};o[it.target+"_status"]=st;o[it.target+"_certification"]=cert;ov[it.k]=o;lss("opreg_overrides",ov);
+    const c=allCandidates().find(x=>(x.candidate_key||x.id)===it.k);
+    const vm=verdictMap();vm[it.k]=classify(c).verdict;lss("opreg_verdicts",vm);
+    applied=true;
+  }
+  lss("opreg_queue",q);document.getElementById("modal-queue").classList.add("hidden");
+  renderQueue();toast(applied?"Run logged — status updated, verdict recalculated":"Run logged")}
 function propCell(c,f){const st=c[f+"_status"]||"not_tested";const cert=c[f+"_certification"]||"none";
   const cond=(f==="positivity")?c.conditional_on_positivity:c.conditional_on;
   return `<b>${esc(st)}</b> <span class="badge b-cert">${esc(cert)}</span>`+(st==="conditional"&&cond&&cond.length?`<br><span style="font-size:11px;color:var(--muted)">if: ${esc(cond.join("; "))}</span>`:"")}
