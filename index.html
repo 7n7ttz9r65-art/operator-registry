@@ -21,6 +21,9 @@ button{font-family:inherit;cursor:pointer}
 nav.tabs{background:var(--card);border-bottom:1px solid var(--border);display:flex;overflow-x:auto}
 nav.tabs button{flex:1;min-width:90px;background:none;border:none;border-bottom:3px solid transparent;padding:12px 8px;font-size:14px;color:var(--muted);white-space:nowrap}
 nav.tabs button.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
+nav.tabs .navdiv{flex:0;width:2px;background:var(--border);margin:8px 0}
+nav.tabs button.creator-tab{color:var(--accent);font-weight:700}
+.flip{font-weight:700;color:var(--accent)}
 .wrap{max-width:900px;margin:0 auto;padding:16px}
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px}
 .tile{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center}
@@ -84,11 +87,12 @@ label{font-size:13px;color:var(--muted)}
   <button class="btn-help" onclick="openTutorial()">? Tutorial</button>
 </div>
 <nav class="tabs">
+  <button id="tab-create" class="creator-tab" onclick="showTab('create')">🛠 Creator</button>
+  <span class="navdiv"></span>
   <button id="tab-dash" class="active" onclick="showTab('dash')">Dashboard</button>
   <button id="tab-cand" onclick="showTab('cand')">Candidates</button>
   <button id="tab-compare" onclick="showTab('compare')">Compare</button>
   <button id="tab-queue" onclick="showTab('queue')">Run Queue</button>
-  <button id="tab-add" onclick="showTab('add')">Add Candidate</button>
   <button id="tab-runs" onclick="showTab('runs')">Runs &amp; Saved</button>
   <button id="tab-help" onclick="showTab('help')">Help</button>
 </nav>
@@ -129,10 +133,10 @@ label{font-size:13px;color:var(--muted)}
 <div id="view-detail" class="hidden"></div>
 
 <!-- ADD CANDIDATE -->
-<div id="view-add" class="hidden">
+<div id="view-create" class="hidden">
   <div class="card">
-    <h2>Add a candidate</h2>
-    <p style="font-size:13px;color:var(--muted)">New candidates are stored in this browser (localStorage) and included in the next audit run.</p>
+    <h2>Candidate Creator</h2>
+    <p style="font-size:13px;color:var(--muted)">Build and test a candidate <b>before it enters the registry</b>. Press <b>▶ Play test</b> to run the full audit on your draft — nothing is sent to the registry until you choose to. This is the <b>play button of the Creator</b>; the registry has its own separate <b>Run Audit</b> button.</p>
     <h3>Import from JSON</h3>
     <textarea id="paste-json" rows="6" placeholder='Paste a candidate record as JSON here...'></textarea>
     <button class="btn sec" onclick="importJSON()">Import JSON into form</button>
@@ -154,8 +158,17 @@ label{font-size:13px;color:var(--muted)}
     <div id="prop-form"></div>
     <label>conditional_on (if any status is "conditional", state the unproved premise)</label>
     <textarea id="f-cond" rows="2"></textarea>
-    <button class="btn" onclick="saveCandidate()">Save candidate</button>
-    <span id="add-msg" style="font-size:13px;color:var(--green);margin-left:10px"></span>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px">
+      <button class="btn" onclick="playDraft()">▶ Play test</button>
+      <button class="btn sec" onclick="saveDraft()">Save draft</button>
+      <span id="add-msg" style="font-size:13px;color:var(--green)"></span>
+    </div>
+    <div id="play-result"></div>
+  </div>
+  <div class="card">
+    <h3>Drafts</h3>
+    <p style="font-size:13px;color:var(--muted)">Work in progress. Drafts live here, separate from the registry — load one to keep editing, and play test it anytime.</p>
+    <div id="drafts-list"></div>
   </div>
 </div>
 
@@ -925,11 +938,12 @@ function esc(s){return String(s??"").replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&l
 /* ================= UI ================= */
 let currentView="dash";
 function showTab(v){currentView=v;
-  for(const t of ["dash","cand","add","runs","detail","help","compare","queue"])document.getElementById("view-"+t).classList.add("hidden");
+  for(const t of ["dash","cand","create","runs","detail","help","compare","queue"])document.getElementById("view-"+t).classList.add("hidden");
   document.getElementById("view-"+v).classList.remove("hidden");
-  for(const t of ["dash","cand","add","runs","help","compare","queue"])document.getElementById("tab-"+t).classList.toggle("active",t===v);
+  for(const t of ["dash","cand","create","runs","help","compare","queue"])document.getElementById("tab-"+t).classList.toggle("active",t===v);
   if(v==="cand")renderCandidates();
   if(v==="compare")renderCompare();
+  if(v==="create")renderDrafts();
   if(v==="queue")renderQueue();
   if(v==="runs")renderRuns();
   if(v==="dash")renderDashboard();
@@ -1209,42 +1223,98 @@ function buildPropForm(){document.getElementById("prop-form").innerHTML=PROP_FIE
   `<div class="form-grid"><div><label>${f.replace(/_/g," ")} status</label><select id="p-${f}-s">${STATUS_OPTS.map(s=>`<option ${s==="not_tested"?"selected":""}>${s}</option>`).join("")}</select></div>
   <div><label>certification</label><select id="p-${f}-c">${CERT_LEVELS.map(c=>`<option ${c==="none"?"selected":""}>${c}</option>`).join("")}</select></div></div>`).join("")}
 function importJSON(){
-  try{const c=JSON.parse(document.getElementById("paste-json").value);
-    document.getElementById("f-key").value=c.candidate_key||c.id||"";
-    document.getElementById("f-name").value=c.name||"";
-    document.getElementById("f-def").value=c.definition_source||"";
-    document.getElementById("f-attest").value=c.circularity_attestation||"";
-    document.getElementById("f-spec").value=c.arithmetic_specificity||"generic";
-    document.getElementById("f-zero").checked=!!c.uses_zero_data;
-    document.getElementById("f-wron").checked=!!c.uses_target_wronskian;
-    document.getElementById("f-fit").checked=!!c.uses_spectral_fitting;
-    document.getElementById("f-posthoc").checked=!!c.uses_post_hoc_target_definition;
-    for(const f of PROP_FIELDS){const s=document.getElementById("p-"+f+"-s"),cc=document.getElementById("p-"+f+"-c");
-      if(c[f+"_status"])s.value=c[f+"_status"];if(c[f+"_certification"]&&(c[f+"_certification"]==="none"||CERT_LEVELS.includes(c[f+"_certification"])))cc.value=c[f+"_certification"];}
-    document.getElementById("f-cond").value=((c.conditional_on||[]).join("; "))||"";
-    toast("Imported into form — review and press Save");
-  }catch(e){toast("Invalid JSON: "+e.message)}
+  try{fillForm(JSON.parse(document.getElementById("paste-json").value));toast("Imported into form — press ▶ Play test")}catch(e){toast("Invalid JSON: "+e.message)}
 }
-function saveCandidate(){
+function collectCandidate(requireFull){
   const key=document.getElementById("f-key").value.trim();
-  if(!key||!document.getElementById("f-name").value.trim()){toast("Key and name are required");return;}
+  const name=document.getElementById("f-name").value.trim();
+  if(!key||!name)return{err:"Key and name are required"};
   const att=document.getElementById("f-attest").value.trim();
-  if(!att){toast("Circularity attestation is required (schema §7)");return;}
-  const c={candidate_key:key,name:document.getElementById("f-name").value.trim(),
+  if(requireFull&&!att)return{err:"Circularity attestation is required (schema §7)"};
+  const cond=document.getElementById("f-cond").value.trim();
+  const c={candidate_key:key,name:name,
     definition_source:document.getElementById("f-def").value.trim(),circularity_attestation:att,
     uses_zero_data:document.getElementById("f-zero").checked,uses_target_wronskian:document.getElementById("f-wron").checked,
     uses_spectral_fitting:document.getElementById("f-fit").checked,uses_post_hoc_target_definition:document.getElementById("f-posthoc").checked,
     arithmetic_specificity:document.getElementById("f-spec").value,
-    conditional_on:document.getElementById("f-cond").value.trim()?[document.getElementById("f-cond").value.trim()]:[],
-    conditional_on_positivity:document.getElementById("f-cond").value.trim()?[document.getElementById("f-cond").value.trim()]:[],
+    conditional_on:cond?[cond]:[],conditional_on_positivity:cond?[cond]:[],
     evidence_files:[],rejection_reasons:[],open_requirements:[],
-    status_log:[{timestamp:new Date().toISOString(),field:"all",old:"n/a",new:"as entered",reason:"Candidate added in standalone registry",evidence_ref:"manual entry"}]};
+    status_log:[{timestamp:new Date().toISOString(),field:"all",old:"n/a",new:"as entered",reason:"Built in the Candidate Creator",evidence_ref:"manual entry"}]};
   for(const f of PROP_FIELDS){c[f+"_status"]=document.getElementById("p-"+f+"-s").value;c[f+"_certification"]=document.getElementById("p-"+f+"-c").value;}
-  const added=ls("opreg_added",[]);
-  if(added.some(x=>x.candidate_key===key)||REGISTRY.candidates.some(x=>x.candidate_key===key)){toast("A candidate with this key already exists");return;}
+  return{c};
+}
+let PLAYED=null;
+function playDraft(){
+  const r=collectCandidate(true);
+  if(r.err){toast(r.err);return}
+  const c=r.c;const res=classify(c);
+  const rows=PROP_FIELDS.map(f=>{
+    const pf=simFlip(c,f,"proved","interval_arithmetic"),ff=simFlip(c,f,"failed","interval_arithmetic");
+    return `<tr><td>${f.replace(/_/g," ")}</td><td>${esc(c[f+"_status"])}</td><td class="${pf!==res.verdict?"flip":""}">${esc(pf)}</td><td class="${ff!==res.verdict?"flip":""}">${esc(ff)}</td></tr>`}).join("");
+  const passable=res.verdict!=="REJECTED"&&res.verdict!=="SCHEMA_VIOLATION";
+  document.getElementById("play-result").innerHTML=`
+    <h3 style="margin-top:18px">Play test result</h3>
+    <div class="kv"><b>verdict:</b> <span class="badge b-${res.verdict}">${res.verdict}</span></div>
+    ${res.reasons.length?`<ul style="margin:8px 0 8px 18px;font-size:13px">${res.reasons.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
+    ${res.missing&&res.missing.length?`<p class="miss" style="font-size:12px">MISSING: ${esc(res.missing.join(", "))}</p>`:""}
+    <div style="overflow-x:auto"><table><thead><tr><th>Property</th><th>Now</th><th>If proved (interval)</th><th>If failed (interval)</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p style="font-size:12px;color:var(--muted)">Highlighted cells = that outcome would change the draft's verdict.</p>
+    <div style="margin-top:14px">
+      ${passable
+        ?`<button class="btn" onclick="sendToRegistry()">✓ Passes — send to registry →</button> <span style="font-size:12px;color:var(--muted)">Adds it to the registry; it will be included in Run Audit.</span>`
+        :`<span style="font-size:13px;color:var(--red)"><b>Rejected — stays here in the Creator.</b> Tweak the draft and play again.</span>`}
+    </div>`;
+  PLAYED=c;
+  document.getElementById("add-msg").textContent="";
+}
+function sendToRegistry(){
+  if(!PLAYED){toast("Play test first");return}
+  const c=PLAYED;const added=ls("opreg_added",[]);
+  if(added.some(x=>x.candidate_key===c.candidate_key)||REGISTRY.candidates.some(x=>x.candidate_key===c.candidate_key)){toast("A candidate with this key already exists");return}
   added.push(c);lss("opreg_added",added);
-  document.getElementById("add-msg").textContent="Saved. Run the audit to classify it.";
-  toast("Candidate saved");
+  const vm=verdictMap();vm[c.candidate_key]=classify(c).verdict;lss("opreg_verdicts",vm);
+  lss("opreg_drafts",ls("opreg_drafts",[]).filter(x=>x.key!==c.candidate_key));
+  PLAYED=null;
+  document.getElementById("add-msg").textContent="Sent to the registry ✓ — see the Candidates tab";
+  document.getElementById("play-result").innerHTML="";
+  renderDrafts();toast("Candidate sent to the registry");
+}
+function saveDraft(){
+  const r=collectCandidate(false);
+  if(r.err){toast(r.err);return}
+  const d=ls("opreg_drafts",[]);
+  const rec={id:Date.now()+"_"+Math.floor(Math.random()*999),key:r.c.candidate_key,name:r.c.name,saved_at:new Date().toISOString(),data:r.c};
+  const ex=d.findIndex(x=>x.key===rec.key);
+  if(ex>=0){rec.id=d[ex].id;d[ex]=rec}else d.push(rec);
+  lss("opreg_drafts",d);renderDrafts();toast("Draft saved — stays out of the registry until you send it");
+}
+function loadDraft(id){const d=ls("opreg_drafts",[]).find(x=>x.id===id);if(!d)return;fillForm(d.data);document.getElementById("play-result").innerHTML="";document.getElementById("add-msg").textContent="";toast("Draft loaded — press ▶ Play test")}
+function delDraft(id){lss("opreg_drafts",ls("opreg_drafts",[]).filter(x=>x.id!==id));renderDrafts()}
+function renderDrafts(){
+  const d=ls("opreg_drafts",[]);
+  document.getElementById("drafts-list").innerHTML=d.length?d.map(x=>`
+    <div style="border-top:1px solid var(--border);padding:8px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <b style="font-size:14px">${esc(x.name)}</b> <span class="badge b-cert">${esc(x.key)}</span>
+      <span style="font-size:12px;color:var(--muted)">${new Date(x.saved_at).toLocaleString()}</span>
+      <span style="margin-left:auto;display:flex;gap:4px">
+        <button class="btn sec" style="padding:2px 10px;font-size:12px" onclick="loadDraft('${x.id}')">Load</button>
+        <button class="btn sec" style="padding:2px 8px;font-size:12px" onclick="delDraft('${x.id}')">✕</button>
+      </span>
+    </div>`).join(""):'<p style="color:var(--muted);font-size:13px">No drafts yet — build one above.</p>';
+}
+function fillForm(c){
+  document.getElementById("f-key").value=c.candidate_key||c.id||"";
+  document.getElementById("f-name").value=c.name||"";
+  document.getElementById("f-def").value=c.definition_source||"";
+  document.getElementById("f-attest").value=c.circularity_attestation||"";
+  document.getElementById("f-spec").value=c.arithmetic_specificity||"generic";
+  document.getElementById("f-zero").checked=!!c.uses_zero_data;
+  document.getElementById("f-wron").checked=!!c.uses_target_wronskian;
+  document.getElementById("f-fit").checked=!!c.uses_spectral_fitting;
+  document.getElementById("f-posthoc").checked=!!c.uses_post_hoc_target_definition;
+  for(const f of PROP_FIELDS){const s=document.getElementById("p-"+f+"-s"),cc=document.getElementById("p-"+f+"-c");
+    if(c[f+"_status"])s.value=c[f+"_status"];if(c[f+"_certification"]&&(c[f+"_certification"]==="none"||CERT_LEVELS.includes(c[f+"_certification"])))cc.value=c[f+"_certification"];}
+  document.getElementById("f-cond").value=((c.conditional_on||[]).join("; "))||"";
 }
 /* tutorial */
 const TUT_STEPS=[
@@ -1252,7 +1322,8 @@ const TUT_STEPS=[
  {t:"How to read a candidate",b:"Each candidate is scored on <b>7 properties</b> (trace, positivity, covariance, self-adjointness, compact resolvent, Weyl law, determinant). Every status carries a <b>certification level</b>: floating-point numbers are only suggestive; \"proved\" or \"failed\" require interval arithmetic or an analytic proof."},
  {t:"The verdicts",b:"<b>REJECTED</b> = a rule fired, it's a proven no-go. <b>CONDITIONAL_SURVIVOR</b> = survives if its stated assumptions are proven. <b>UNCERTIFIED_INDETERMINATE</b> = not enough certified evidence to judge. <b>UNCONDITIONAL_SURVIVOR</b> = all properties proved (none yet). <b>SCHEMA_VIOLATION</b> = malformed record. Full plain-English definitions live in the Help tab."},
  {t:"Run the audit",b:"The <b>Run Audit</b> button re-checks every candidate through the rule engine. <b>Runs &amp; Saved</b> keeps the history of every run; <b>Download registry</b> exports everything as JSON."},
- {t:"Make it yours",b:"Add candidates, leave comments on any candidate page, and use the <b>share buttons</b> to send the app, audit results, candidates, or notes to anyone. Install it on your phone's home screen from your browser menu — it works fully offline."}];
+ {t:"Creator vs registry",b:"The <b>Candidate Creator</b> (first tab) is where candidates are born: build a draft, then press <b>▶ Play test</b> to run the full audit on the draft alone — the registry stays untouched. Only drafts that aren't rejected get a <b>send to registry</b> button. The registry's own <b>Run Audit</b> button then re-checks everything inside it."},
+ {t:"Make it yours",b:"Leave comments on any candidate page, and use the <b>share buttons</b> to send the app, audit results, candidates, or notes to anyone. Install it on your phone's home screen from your browser menu — it works fully offline."}];
 let TUT=0;
 function tutStep(n){
   if(n>=TUT_STEPS.length){closeTutorial();return}
