@@ -47,6 +47,14 @@ Built-in **share buttons** use your phone's native share sheet (messages, email,
 - **↗ Share** (candidate page) — shares a candidate's definition, verdict, and reason.
 - **↗ share note** (each comment) — shares an individual note.
 
+## Candidate Creator vs the registry
+
+The **Creator** (first tab) is separated from the **registry** — each has its own button:
+
+- **▶ Play test** (Creator) runs the full audit on your draft alone: verdict, which rules fired, and a what-if table showing what each property's proved/failed outcome would do to the verdict. Nothing enters the registry until you send it.
+- **Drafts** stay in the Creator — build, save, load, iterate.
+- Only drafts that aren't outright REJECTED get the **"✓ Passes — send to registry"** button. Once sent, the candidate appears in the registry and is covered by its separate **Run Audit** button.
+
 ## Run queue — what to run next
 
 The **Run Queue** tab ranks what to run next instead of guessing, computed live from the audit state:
