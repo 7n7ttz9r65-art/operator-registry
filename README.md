@@ -53,6 +53,7 @@ The **Creator** (first tab) is separated from the **registry** — each has its 
 
 - **▶ Play test** (Creator) runs the full audit on your draft alone: verdict, which rules fired, and a what-if table showing what each property's proved/failed outcome would do to the verdict. Nothing enters the registry until you send it.
 - **Drafts** stay in the Creator — build, save, load, iterate.
+- Press **✨ Auto-generate** and the app builds a complete random draft for you (schema-valid by construction), play-tests it, and leaves it ready to send or tweak.
 - Only drafts that aren't outright REJECTED get the **"✓ Passes — send to registry"** button. Once sent, the candidate appears in the registry and is covered by its separate **Run Audit** button.
 
 ## Run queue — what to run next
@@ -61,7 +62,7 @@ The **Run Queue** tab ranks what to run next instead of guessing, computed live 
 
 - Certifications that could **flip a verdict** rank first (e.g. "if the run fails Weyl, the candidate is REJECTED").
 - Cheap floating-point → interval-arithmetic upgrades rank next.
-- Add any suggestion to **your queue** (reorder it however you like with the arrows), or add custom experiment runs.
+- Add any suggestion to **your queue** (reorder it however you like with the arrows, and ✕ delete runs you no longer need) (reorder it however you like with the arrows), or add custom experiment runs.
 - Finishing a run logs the result and can **apply the new property status directly** — the verdict recalculates on the spot.
 - Everything is tracked: queued → running → done/skipped, with a run log.
 
