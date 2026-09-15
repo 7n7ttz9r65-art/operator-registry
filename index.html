@@ -160,6 +160,7 @@ label{font-size:13px;color:var(--muted)}
     <textarea id="f-cond" rows="2"></textarea>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px">
       <button class="btn" onclick="playDraft()">▶ Play test</button>
+      <button class="btn sec" onclick="autoDraft()">✨ Auto-generate</button>
       <button class="btn sec" onclick="saveDraft()">Save draft</button>
       <span id="add-msg" style="font-size:13px;color:var(--green)"></span>
     </div>
@@ -1123,6 +1124,7 @@ function renderQList(){
           ${it.status==="queued"?`<button class="btn" style="padding:2px 10px" onclick="startQ('${it.id}')">Start</button>`:""}
           ${it.status==="running"?`<button class="btn" style="padding:2px 10px" onclick="openFinish('${it.id}')">Finish</button>`:""}
           <button class="btn sec" style="padding:2px 8px" onclick="skipQ('${it.id}')">Skip</button>
+          <button class="btn sec" style="padding:2px 8px" title="Delete this queued run" onclick="delQ('${it.id}')">✕</button>
         </span>
       </div>
       <div style="font-size:12px;color:var(--muted);margin-top:2px">candidate: ${esc(it.k)}${vm[it.k]?` · <span class="badge b-${vm[it.k]}">${vm[it.k]}</span>`:""}</div>
@@ -1137,6 +1139,7 @@ function renderQList(){
 function moveQ(i,d){const q=ls("opreg_queue",[]);const act=q.filter(x=>x.status==="queued"||x.status==="running");const a=act[i],b=act[i+d];if(!a||!b)return;const ia=q.indexOf(a),ib=q.indexOf(b);q[ia]=b;q[ib]=a;lss("opreg_queue",q);renderQueue()}
 function startQ(id){const q=ls("opreg_queue",[]);const it=q.find(x=>x.id===id);if(!it)return;it.status="running";it.started_at=new Date().toISOString();lss("opreg_queue",q);renderQueue();toast("Run started")}
 function skipQ(id){const q=ls("opreg_queue",[]);const it=q.find(x=>x.id===id);if(!it)return;it.status="skipped";it.finished_at=new Date().toISOString();lss("opreg_queue",q);renderQueue()}
+function delQ(id){lss("opreg_queue",ls("opreg_queue",[]).filter(x=>x.id!==id));renderQueue();toast("Removed from queue")}
 let FINISH_ID=null;
 function openFinish(id){const q=ls("opreg_queue",[]);const it=q.find(x=>x.id===id);if(!it)return;FINISH_ID=id;
   document.getElementById("fq-label").textContent=it.label;
@@ -1243,6 +1246,41 @@ function collectCandidate(requireFull){
   for(const f of PROP_FIELDS){c[f+"_status"]=document.getElementById("p-"+f+"-s").value;c[f+"_certification"]=document.getElementById("p-"+f+"-c").value;}
   return{c};
 }
+const AUTO_ADJ=["Trace-coherent","Theta-regularized","Prime-weighted","Shifted","Convolved","Truncated","Schrödinger-type","Rank-one perturbed","Bilateral","Renormalized"];
+const AUTO_NOUN=["prime-counting operator","compact Jacobi operator","symmetrized transfer operator","Gaussian ensemble","Weyl-lattice operator","semigroup generator","Dirichlet series generator","Hilbert-Schmidt perturbation"];
+function autoDraft(){
+  const rnd=a=>a[Math.floor(Math.random()*a.length)];
+  const ri=(lo,hi)=>lo+Math.floor(Math.random()*(hi-lo+1));
+  let key;const taken=new Set([...ls("opreg_drafts",[]).map(x=>x.key),...ls("opreg_added",[]).map(x=>x.candidate_key),...REGISTRY.candidates.map(x=>x.candidate_key)]);
+  do{key="auto_"+ri(1000,9999)}while(taken.has(key));
+  const c={candidate_key:key,name:rnd(AUTO_ADJ)+" "+rnd(AUTO_NOUN),
+    definition_source:"Auto-generated construction — random parameter draw",
+    circularity_attestation:"Auto-generated: construction is defined by its parameters alone, no zero-location data used",
+    uses_zero_data:Math.random()<0.08,uses_target_wronskian:Math.random()<0.1,uses_spectral_fitting:Math.random()<0.12,uses_post_hoc_target_definition:Math.random()<0.08,
+    arithmetic_specificity:rnd(["generic","prime_specific","theta_arithmetic"]),
+    conditional_on:[],conditional_on_positivity:[],
+    evidence_files:[],rejection_reasons:[],open_requirements:[],
+    status_log:[{timestamp:new Date().toISOString(),field:"all",old:"n/a",new:"auto-generated",reason:"Auto-generated in the Candidate Creator",evidence_ref:"auto"}]};
+  const cond=[];
+  for(const f of PROP_FIELDS){
+    const r=Math.random();
+    if(r<0.45){c[f+"_status"]="not_tested";c[f+"_certification"]="none"}
+    else if(r<0.65){c[f+"_status"]="numerical";c[f+"_certification"]="floating_point"}
+    else if(r<0.9){c[f+"_status"]="conditional";c[f+"_certification"]="floating_point";cond.push(f.replace(/_/g," "))}
+    else{c[f+"_status"]=rnd(["proved","failed"]);c[f+"_certification"]="interval_arithmetic"}
+  }
+  if(cond.length){c.conditional_on=["Auto premise: "+cond.join(", ")+" assumed"];c.conditional_on_positivity=c.conditional_on}
+  fillForm(c);
+  const drafts=ls("opreg_drafts",[]);
+  const rec={id:Date.now()+"_"+Math.floor(Math.random()*999),key:c.candidate_key,name:c.name,saved_at:new Date().toISOString(),data:c};
+  const ex=drafts.findIndex(x=>x.key===rec.key);
+  if(ex>=0){rec.id=drafts[ex].id;drafts[ex]=rec}else drafts.push(rec);
+  lss("opreg_drafts",drafts);
+  renderDrafts();
+  document.getElementById("add-msg").textContent="Draft auto-generated — play test below";
+  toast("Auto-generated draft — play test is ready below");
+  playDraft();
+}
 let PLAYED=null;
 function playDraft(){
   const r=collectCandidate(true);
@@ -1322,7 +1360,8 @@ const TUT_STEPS=[
  {t:"How to read a candidate",b:"Each candidate is scored on <b>7 properties</b> (trace, positivity, covariance, self-adjointness, compact resolvent, Weyl law, determinant). Every status carries a <b>certification level</b>: floating-point numbers are only suggestive; \"proved\" or \"failed\" require interval arithmetic or an analytic proof."},
  {t:"The verdicts",b:"<b>REJECTED</b> = a rule fired, it's a proven no-go. <b>CONDITIONAL_SURVIVOR</b> = survives if its stated assumptions are proven. <b>UNCERTIFIED_INDETERMINATE</b> = not enough certified evidence to judge. <b>UNCONDITIONAL_SURVIVOR</b> = all properties proved (none yet). <b>SCHEMA_VIOLATION</b> = malformed record. Full plain-English definitions live in the Help tab."},
  {t:"Run the audit",b:"The <b>Run Audit</b> button re-checks every candidate through the rule engine. <b>Runs &amp; Saved</b> keeps the history of every run; <b>Download registry</b> exports everything as JSON."},
- {t:"Creator vs registry",b:"The <b>Candidate Creator</b> (first tab) is where candidates are born: build a draft, then press <b>▶ Play test</b> to run the full audit on the draft alone — the registry stays untouched. Only drafts that aren't rejected get a <b>send to registry</b> button. The registry's own <b>Run Audit</b> button then re-checks everything inside it."},
+ {t:"Creator vs registry",b:"The <b>Candidate Creator</b> (first tab) is where candidates are born: build a draft, then press <b>▶ Play test</b> to run the full audit on the draft alone — the registry stays untouched. Short on ideas? Press <b>✨ Auto-generate</b> and the app builds a random draft for you. Only drafts that aren't rejected get a <b>send to registry</b> button. The registry's own <b>Run Audit</b> button then re-checks everything inside it."},
+ {t:"The Run Queue",b:"The <b>Run Queue</b> tab ranks what to run next, so you don't have to guess: take a ranked suggestion, <b>Start</b> it, then <b>Finish</b> it with the result — the candidate's verdict updates itself. Reorder runs with the arrows, <b>Skip</b> what you won't do, and <b>✕</b> delete runs you no longer need."},
  {t:"Make it yours",b:"Leave comments on any candidate page, and use the <b>share buttons</b> to send the app, audit results, candidates, or notes to anyone. Install it on your phone's home screen from your browser menu — it works fully offline."}];
 let TUT=0;
 function tutStep(n){
