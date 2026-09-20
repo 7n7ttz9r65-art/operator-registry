@@ -1246,30 +1246,48 @@ function collectCandidate(requireFull){
   for(const f of PROP_FIELDS){c[f+"_status"]=document.getElementById("p-"+f+"-s").value;c[f+"_certification"]=document.getElementById("p-"+f+"-c").value;}
   return{c};
 }
-const AUTO_ADJ=["Trace-coherent","Theta-regularized","Prime-weighted","Shifted","Convolved","Truncated","Schrödinger-type","Rank-one perturbed","Bilateral","Renormalized"];
-const AUTO_NOUN=["prime-counting operator","compact Jacobi operator","symmetrized transfer operator","Gaussian ensemble","Weyl-lattice operator","semigroup generator","Dirichlet series generator","Hilbert-Schmidt perturbation"];
+const AUTO_TEMPLATES=[
+ {a:"Prime-weighted",n:"compact Jacobi operator",s:"prime_specific",d:"Jacobi-type operator with weights indexed by the primes; spectral data appears only as a target, never as an input",p:"spectral gap: the prime-weighted Dirichlet series converges for Re(s)>1/2"},
+ {a:"Theta-regularized",n:"semigroup generator",s:"theta_arithmetic",d:"Generator of a compact semigroup obtained by regularizing the theta transform on a fixed test-function space",p:"compactness of the resolvent away from the critical line"},
+ {a:"Trace-coherent",n:"symmetrized transfer operator",s:"generic",d:"Symmetrized transfer operator whose formal trace coincides with the explicit-formula sum",p:"absolute convergence of the formal trace on the chosen test-function space"},
+ {a:"Convolved",n:"Gaussian kernel ensemble",s:"prime_specific",d:"Riesz-convolved Gaussian kernel with prime-indexed correlations",p:"positivity of the convolved kernel off the real axis"},
+ {a:"Bilateral",n:"Dirichlet series generator",s:"prime_specific",d:"Shifted Dirichlet series generator with bilateral coefficients derived from von Mangoldt weights",p:"Weyl-law asymptotics for the truncated shift operator"},
+ {a:"Truncated",n:"Weyl-lattice operator",s:"generic",d:"Truncated lattice operator approximating the Riemann-Weyl sum",p:"determinant positivity in the truncation limit"},
+ {a:"Rank-one perturbed",n:"Hilbert-Schmidt operator",s:"generic",d:"Rank-one perturbation of a fixed Hilbert-Schmidt class operator",p:"the perturbation stays trace-class in the scaling limit"},
+ {a:"Renormalized",n:"prime-counting operator",s:"prime_specific",d:"Renormalized counting operator built from the Chebyshev function psi(x)",p:"the renormalization preserves self-adjointness"},
+ {a:"Schrödinger-type",n:"semigroup generator",s:"prime_specific",d:"Schrödinger-type generator with a potential assembled from prime logs",p:"the potential decays fast enough for a compact resolvent"}
+];
 function autoDraft(){
   const rnd=a=>a[Math.floor(Math.random()*a.length)];
   const ri=(lo,hi)=>lo+Math.floor(Math.random()*(hi-lo+1));
   let key;const taken=new Set([...ls("opreg_drafts",[]).map(x=>x.key),...ls("opreg_added",[]).map(x=>x.candidate_key),...REGISTRY.candidates.map(x=>x.candidate_key)]);
   do{key="auto_"+ri(1000,9999)}while(taken.has(key));
-  const c={candidate_key:key,name:rnd(AUTO_ADJ)+" "+rnd(AUTO_NOUN),
-    definition_source:"Auto-generated construction — random parameter draw",
-    circularity_attestation:"Auto-generated: construction is defined by its parameters alone, no zero-location data used",
-    uses_zero_data:Math.random()<0.08,uses_target_wronskian:Math.random()<0.1,uses_spectral_fitting:Math.random()<0.12,uses_post_hoc_target_definition:Math.random()<0.08,
-    arithmetic_specificity:rnd(["generic","prime_specific","theta_arithmetic"]),
+  const T=rnd(AUTO_TEMPLATES);
+  const c={candidate_key:key,name:T.a+" "+T.n,
+    definition_source:T.d,
+    circularity_attestation:"Auto-generated: construction is defined by its "+(T.s==="prime_specific"?"prime indexing":"fixed parameters")+" alone; no zero-location or spectral data enters the definition.",
+    uses_zero_data:false,uses_target_wronskian:false,uses_spectral_fitting:false,uses_post_hoc_target_definition:false,
+    arithmetic_specificity:T.s,
     conditional_on:[],conditional_on_positivity:[],
     evidence_files:[],rejection_reasons:[],open_requirements:[],
     status_log:[{timestamp:new Date().toISOString(),field:"all",old:"n/a",new:"auto-generated",reason:"Auto-generated in the Candidate Creator",evidence_ref:"auto"}]};
-  const cond=[];
-  for(const f of PROP_FIELDS){
+  const withCond=Math.random()<0.8;
+  const nCond=withCond?ri(2,4):0;
+  const shuffled=[...PROP_FIELDS].sort(()=>Math.random()-0.5);
+  const condFields=shuffled.slice(0,nCond);
+  const rest=shuffled.slice(nCond);
+  for(const f of condFields){c[f+"_status"]="conditional";c[f+"_certification"]="floating_point"}
+  for(const f of rest){
     const r=Math.random();
-    if(r<0.45){c[f+"_status"]="not_tested";c[f+"_certification"]="none"}
-    else if(r<0.65){c[f+"_status"]="numerical";c[f+"_certification"]="floating_point"}
-    else if(r<0.9){c[f+"_status"]="conditional";c[f+"_certification"]="floating_point";cond.push(f.replace(/_/g," "))}
-    else{c[f+"_status"]=rnd(["proved","failed"]);c[f+"_certification"]="interval_arithmetic"}
+    if(r<0.55){c[f+"_status"]="not_tested";c[f+"_certification"]="none"}
+    else if(r<0.85){c[f+"_status"]="numerical";c[f+"_certification"]="floating_point"}
+    else if(f==="trace"&&T.s==="generic"){c[f+"_status"]="numerical";c[f+"_certification"]="floating_point"}
+    else{c[f+"_status"]="proved";c[f+"_certification"]=Math.random()<0.5?"interval_arithmetic":"analytic_proof"}
   }
-  if(cond.length){c.conditional_on=["Auto premise: "+cond.join(", ")+" assumed"];c.conditional_on_positivity=c.conditional_on}
+  if(condFields.length){
+    if(condFields.includes("positivity"))c.conditional_on_positivity=[T.p];
+    if(condFields.some(f=>f!=="positivity"))c.conditional_on=[T.p];
+  }
   fillForm(c);
   const drafts=ls("opreg_drafts",[]);
   const rec={id:Date.now()+"_"+Math.floor(Math.random()*999),key:c.candidate_key,name:c.name,saved_at:new Date().toISOString(),data:c};
@@ -1360,7 +1378,7 @@ const TUT_STEPS=[
  {t:"How to read a candidate",b:"Each candidate is scored on <b>7 properties</b> (trace, positivity, covariance, self-adjointness, compact resolvent, Weyl law, determinant). Every status carries a <b>certification level</b>: floating-point numbers are only suggestive; \"proved\" or \"failed\" require interval arithmetic or an analytic proof."},
  {t:"The verdicts",b:"<b>REJECTED</b> = a rule fired, it's a proven no-go. <b>CONDITIONAL_SURVIVOR</b> = survives if its stated assumptions are proven. <b>UNCERTIFIED_INDETERMINATE</b> = not enough certified evidence to judge. <b>UNCONDITIONAL_SURVIVOR</b> = all properties proved (none yet). <b>SCHEMA_VIOLATION</b> = malformed record. Full plain-English definitions live in the Help tab."},
  {t:"Run the audit",b:"The <b>Run Audit</b> button re-checks every candidate through the rule engine. <b>Runs &amp; Saved</b> keeps the history of every run; <b>Download registry</b> exports everything as JSON."},
- {t:"Creator vs registry",b:"The <b>Candidate Creator</b> (first tab) is where candidates are born: build a draft, then press <b>▶ Play test</b> to run the full audit on the draft alone — the registry stays untouched. Short on ideas? Press <b>✨ Auto-generate</b> and the app builds a random draft for you. Only drafts that aren't rejected get a <b>send to registry</b> button. The registry's own <b>Run Audit</b> button then re-checks everything inside it."},
+ {t:"Creator vs registry",b:"The <b>Candidate Creator</b> (first tab) is where candidates are born: build a draft, then press <b>▶ Play test</b> to run the full audit on the draft alone — the registry stays untouched. Short on ideas? Press <b>✨ Auto-generate</b> and the app builds a ready-to-test draft for you. Only drafts that aren't rejected get a <b>send to registry</b> button. The registry's own <b>Run Audit</b> button then re-checks everything inside it."},
  {t:"The Run Queue",b:"The <b>Run Queue</b> tab ranks what to run next, so you don't have to guess: take a ranked suggestion, <b>Start</b> it, then <b>Finish</b> it with the result — the candidate's verdict updates itself. Reorder runs with the arrows, <b>Skip</b> what you won't do, and <b>✕</b> delete runs you no longer need."},
  {t:"Make it yours",b:"Leave comments on any candidate page, and use the <b>share buttons</b> to send the app, audit results, candidates, or notes to anyone. Install it on your phone's home screen from your browser menu — it works fully offline."}];
 let TUT=0;
