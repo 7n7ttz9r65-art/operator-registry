@@ -53,7 +53,7 @@ The **Creator** (first tab) is separated from the **registry** — each has its 
 
 - **▶ Play test** (Creator) runs the full audit on your draft alone: verdict, which rules fired, and a what-if table showing what each property's proved/failed outcome would do to the verdict. Nothing enters the registry until you send it.
 - **Drafts** stay in the Creator — build, save, load, iterate.
-- Press **✨ Auto-generate** and the app builds a complete random draft for you (schema-valid by construction), play-tests it, and leaves it ready to send or tweak.
+- Press **✨ Auto-generate** and the app builds a complete, meaningful draft for you: a coherent construction (no circularity flags, honest premises), play-tested on the spot and ready to send or tweak.
 - Only drafts that aren't outright REJECTED get the **"✓ Passes — send to registry"** button. Once sent, the candidate appears in the registry and is covered by its separate **Run Audit** button.
 
 ## Run queue — what to run next
